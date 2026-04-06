@@ -1,0 +1,87 @@
+# =========================
+# OS
+# =========================
+.DS_Store
+
+# =========================
+# Project docs / generated help
+# =========================
+HELP.md
+
+# =========================
+# Gradle
+# =========================
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Keep build directories inside source trees if ever needed
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# =========================
+# IntelliJ IDEA
+# =========================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Keep out directories inside source trees if ever needed
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# =========================
+# Eclipse / STS
+# =========================
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+bin/
+
+# Keep bin directories inside source trees if ever needed
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# =========================
+# NetBeans
+# =========================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# Local Spring config
+src/main/resources/application-local.yml
+src/main/resources/application-secret.yml
+src/test/resources/application-local.yml
+
+# =========================
+# Misc
+# =========================
+*.swp
+*.swo
