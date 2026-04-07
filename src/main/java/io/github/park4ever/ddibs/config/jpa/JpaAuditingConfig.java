@@ -1,5 +1,9 @@
 package io.github.park4ever.ddibs.config.jpa;
 
-public class JpaAuditingConfig {
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+@Configuration
+@EnableJpaAuditing
+public class JpaAuditingConfig {
 }
