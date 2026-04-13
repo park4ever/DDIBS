@@ -22,7 +22,12 @@ public enum ErrorCode {
     SELLER_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SELLER_002", "판매자 코드 생성에 실패했습니다."),
 
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_001", "상품을 찾을 수 없습니다."),
-    PRODUCT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PRODUCT_002", "상품 코드 생성에 실패했습니다.");
+    PRODUCT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PRODUCT_002", "상품 코드 생성에 실패했습니다."),
+
+    PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_VARIANT_001", "상품 Variant를 찾을 수 없습니다."),
+    PRODUCT_VARIANT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PRODUCT_VARIANT_002", "상품 Variant 코드 생성에 실패했습니다."),
+    DUPLICATE_PRODUCT_VARIANT_NAME(HttpStatus.CONFLICT, "PRODUCT_VARIANT_003", "같은 상품에 동일한 Variant명이 이미 존재합니다."),
+    PRODUCT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_003", "비활성 상품에는 Variant를 생성할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
