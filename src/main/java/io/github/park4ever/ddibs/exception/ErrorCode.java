@@ -19,7 +19,10 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_002", "회원을 찾을 수 없습니다."),
 
     SELLER_NOT_FOUND(HttpStatus.NOT_FOUND, "SELLER_001", "판매자를 찾을 수 없습니다."),
-    SELLER_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SELLER_002", "판매자 코드 생성에 실패했습니다.");
+    SELLER_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SELLER_002", "판매자 코드 생성에 실패했습니다."),
+
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_001", "상품을 찾을 수 없습니다."),
+    PRODUCT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PRODUCT_002", "상품 코드 생성에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;
