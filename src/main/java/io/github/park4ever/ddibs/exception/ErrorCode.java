@@ -33,7 +33,19 @@ public enum ErrorCode {
     INVALID_LAUNCH_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "LAUNCH_002", "허용되지 않는 발매 상태 전이입니다."),
 
     LAUNCH_NOT_FOUND(HttpStatus.NOT_FOUND, "LAUNCH_003", "발매를 찾을 수 없습니다."),
-    LAUNCH_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LAUNCH_004", "발매 코드 생성에 실패했습니다.");
+    LAUNCH_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LAUNCH_004", "발매 코드 생성에 실패했습니다."),
+
+    INVALID_LAUNCH_VARIANT_RELATION(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_001", "발매와 상품 Variant의 상품 정보가 일치하지 않습니다."),
+    INVALID_LAUNCH_VARIANT_SALE_PRICE(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_002", "발매가는 0 이상이어야 합니다."),
+    INVALID_LAUNCH_VARIANT_STOCK(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_003", "발매 재고 정보가 올바르지 않습니다."),
+    INSUFFICIENT_LAUNCH_VARIANT_STOCK(HttpStatus.CONFLICT, "LAUNCH_VARIANT_004", "가용 재고가 부족합니다."),
+    INVALID_LAUNCH_VARIANT_STOCK_RESTORE(HttpStatus.CONFLICT, "LAUNCH_VARIANT_005", "가용 재고 복구 값이 총 재고를 초과할 수 없습니다."),
+    INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_001", "주문 수량은 1 이상이어야 합니다."),
+
+    LAUNCH_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_VARIANT_001", "발매 Variant를 찾을 수 없습니다."),
+    PRODUCT_VARIANT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_VARIANT_004", "비활성 상품 Variant는 발매에 등록할 수 없습니다."),
+    DUPLICATE_LAUNCH_VARIANT(HttpStatus.CONFLICT, "LAUNCH_VARIANT_006", "같은 발매에 동일한 상품 Variant가 이미 등록되어 있습니다."),
+    LAUNCH_VARIANT_REGISTRATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_007", "현재 발매 상태에서는 상품 Variant를 등록할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
