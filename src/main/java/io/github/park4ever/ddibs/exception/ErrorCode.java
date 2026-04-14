@@ -27,7 +27,13 @@ public enum ErrorCode {
     PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_VARIANT_001", "상품 Variant를 찾을 수 없습니다."),
     PRODUCT_VARIANT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PRODUCT_VARIANT_002", "상품 Variant 코드 생성에 실패했습니다."),
     DUPLICATE_PRODUCT_VARIANT_NAME(HttpStatus.CONFLICT, "PRODUCT_VARIANT_003", "같은 상품에 동일한 Variant명이 이미 존재합니다."),
-    PRODUCT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_003", "비활성 상품에는 Variant를 생성할 수 없습니다.");
+    PRODUCT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_003", "비활성 상품에는 Variant를 생성할 수 없습니다."),
+
+    INVALID_LAUNCH_PERIOD(HttpStatus.BAD_REQUEST, "LAUNCH_001", "발매 시작 시간은 종료 시간보다 빨라야 합니다."),
+    INVALID_LAUNCH_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "LAUNCH_002", "허용되지 않는 발매 상태 전이입니다."),
+
+    LAUNCH_NOT_FOUND(HttpStatus.NOT_FOUND, "LAUNCH_003", "발매를 찾을 수 없습니다."),
+    LAUNCH_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LAUNCH_004", "발매 코드 생성에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;
