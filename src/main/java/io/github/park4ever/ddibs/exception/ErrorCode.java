@@ -45,7 +45,19 @@ public enum ErrorCode {
     LAUNCH_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_VARIANT_001", "발매 Variant를 찾을 수 없습니다."),
     PRODUCT_VARIANT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_VARIANT_004", "비활성 상품 Variant는 발매에 등록할 수 없습니다."),
     DUPLICATE_LAUNCH_VARIANT(HttpStatus.CONFLICT, "LAUNCH_VARIANT_006", "같은 발매에 동일한 상품 Variant가 이미 등록되어 있습니다."),
-    LAUNCH_VARIANT_REGISTRATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_007", "현재 발매 상태에서는 상품 Variant를 등록할 수 없습니다.");
+    LAUNCH_VARIANT_REGISTRATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_007", "현재 발매 상태에서는 상품 Variant를 등록할 수 없습니다."),
+
+    INVALID_ORDER_MEMBER(HttpStatus.BAD_REQUEST, "ORDER_002", "주문 회원 정보가 올바르지 않습니다."),
+    INVALID_ORDER_SELLER(HttpStatus.BAD_REQUEST, "ORDER_003", "주문 판매자 정보가 올바르지 않습니다."),
+    INVALID_ORDER_LAUNCH_VARIANT(HttpStatus.BAD_REQUEST, "ORDER_004", "주문 발매 Variant 정보가 올바르지 않습니다."),
+    INVALID_ORDER_CODE(HttpStatus.BAD_REQUEST, "ORDER_005", "주문 코드가 올바르지 않습니다."),
+    INVALID_ORDER_SNAPSHOT(HttpStatus.BAD_REQUEST, "ORDER_006", "주문 스냅샷 정보가 올바르지 않습니다."),
+    INVALID_ORDER_UNIT_PRICE(HttpStatus.BAD_REQUEST, "ORDER_007", "주문 단가는 0 이상이어야 합니다."),
+    INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "ORDER_008", "허용되지 않는 주문 상태 전이입니다."),
+
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_009", "주문을 찾을 수 없습니다."),
+    ORDER_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ORDER_010", "주문 코드 생성에 실패했습니다."),
+    ORDER_CREATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "ORDER_011", "현재 상태에서는 주문을 생성할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
