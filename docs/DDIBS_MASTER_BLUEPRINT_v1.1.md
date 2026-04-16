@@ -149,7 +149,7 @@ DDIBS V1에서 반드시 다루는 범위는 아래와 같다.
 8. 결제 실패 시:
    - `Payment`: `FAILED`
    - `Order`: `PAYMENT_FAILED`
-   - `HoldReservation`: `CANCELED`
+   - `HoldReservation`: `CANCELLED`
    - `LaunchVariant.availableStock` 복구
 9. 확정 주문은 정산 대상이 되며, 정산 생성 배치가 `Settlement`를 생성한다.
 
@@ -264,7 +264,7 @@ DDIBS V1에서는 `OrderItem`을 두지 않는다.
 ### 7.3 HoldStatus
 - `ACTIVE`
 - `CONSUMED`
-- `CANCELED`
+- `CANCELLED`
 - `EXPIRED`
 
 ### 7.4 PaymentStatus
@@ -303,7 +303,7 @@ DDIBS V1에서는 `OrderItem`을 두지 않는다.
 ### 8.4 결제 실패 시
 - `Payment`: `FAILED`
 - `Order`: `PAYMENT_FAILED`
-- `HoldReservation`: `CANCELED`
+- `HoldReservation`: `CANCELLED`
 - 재고 복구
 
 ### 8.5 홀드 만료 시

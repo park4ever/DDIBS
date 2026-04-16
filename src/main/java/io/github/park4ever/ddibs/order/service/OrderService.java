@@ -2,6 +2,8 @@ package io.github.park4ever.ddibs.order.service;
 
 import io.github.park4ever.ddibs.exception.BusinessException;
 import io.github.park4ever.ddibs.exception.ErrorCode;
+import io.github.park4ever.ddibs.holdreservation.domain.HoldReservation;
+import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
 import io.github.park4ever.ddibs.launchvariant.domain.LaunchVariant;
 import io.github.park4ever.ddibs.launchvariant.repository.LaunchVariantRepository;
 import io.github.park4ever.ddibs.member.domain.Member;
@@ -31,19 +33,24 @@ public class OrderService {
     private static final int ORDER_CODE_LENGTH = 8;
     private static final int MAX_ORDER_CODE_RETRY_COUNT = 10;
     private static final int ORDER_QUANTITY = 1;
+    private static final long HOLD_TTL_MINUTES = 10L;
 
     private final OrderRepository orderRepository;
     private final MemberRepository memberRepository;
     private final LaunchVariantRepository launchVariantRepository;
+    private final HoldReservationRepository holdReservationRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional
     public CreateOrderResponse createOrder(Long memberId, CreateOrderRequest request) {
         Member member = findMemberById(memberId);
-        LaunchVariant launchVariant = findLaunchVariantById(request.launchVariantId());
+        LaunchVariant launchVariant = findLaunchVariantForUpdate(request.launchVariantId());
 
         validateLaunchVariantOrderable(launchVariant);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiresAt = now.plusMinutes(HOLD_TTL_MINUTES);
 
         for (int attempt = 0; attempt < MAX_ORDER_CODE_RETRY_COUNT; attempt++) {
             String orderCode = generateOrderCode();
@@ -64,7 +71,13 @@ public class OrderService {
             );
 
             try {
-                Order savedOrder = orderRepository.saveAndFlush(order);
+                Order savedOrder = orderRepository.save(order);
+
+                HoldReservation holdReservation = HoldReservation.create(savedOrder, expiresAt);
+                holdReservationRepository.save(holdReservation);
+
+                launchVariant.decreaseAvailableStock(ORDER_QUANTITY);
+
                 return CreateOrderResponse.from(savedOrder);
             } catch (DataIntegrityViolationException exception) {
                 if (attempt == MAX_ORDER_CODE_RETRY_COUNT - 1) {
@@ -84,7 +97,7 @@ public class OrderService {
     }
 
     public List<OrderSummaryResponse> getMyOrders(Long memberId) {
-        return orderRepository.findALlByMemberIdOrderByIdDesc(memberId)
+        return orderRepository.findAllByMemberIdOrderByIdDesc(memberId)
                 .stream()
                 .map(OrderSummaryResponse::from)
                 .toList();
@@ -95,8 +108,8 @@ public class OrderService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
-    private LaunchVariant findLaunchVariantById(Long launchVariantId) {
-        return launchVariantRepository.findById(launchVariantId)
+    private LaunchVariant findLaunchVariantForUpdate(Long launchVariantId) {
+        return launchVariantRepository.findByIdForUpdate(launchVariantId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LAUNCH_VARIANT_NOT_FOUND));
     }
 

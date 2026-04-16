@@ -57,7 +57,13 @@ public enum ErrorCode {
 
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_009", "주문을 찾을 수 없습니다."),
     ORDER_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ORDER_010", "주문 코드 생성에 실패했습니다."),
-    ORDER_CREATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "ORDER_011", "현재 상태에서는 주문을 생성할 수 없습니다.");
+    ORDER_CREATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "ORDER_011", "현재 상태에서는 주문을 생성할 수 없습니다."),
+
+    INVALID_HOLD_ORDER(HttpStatus.BAD_REQUEST, "HOLD_001", "홀드 주문 정보가 올바르지 않습니다."),
+    INVALID_HOLD_ORDER_STATUS(HttpStatus.BAD_REQUEST, "HOLD_002", "현재 주문 상태에서는 홀드를 생성할 수 없습니다."),
+    INVALID_HOLD_QUANTITY(HttpStatus.BAD_REQUEST, "HOLD_003", "홀드 수량은 1 이상이어야 합니다."),
+    INVALID_HOLD_EXPIRES_AT(HttpStatus.BAD_REQUEST, "HOLD_004", "홀드 만료 시각이 올바르지 않습니다."),
+    INVALID_HOLD_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "HOLD_005", "허용되지 않는 홀드 상태 전이입니다.");
 
     private final HttpStatus status;
     private final String code;
