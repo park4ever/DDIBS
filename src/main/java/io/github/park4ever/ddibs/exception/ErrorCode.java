@@ -63,7 +63,22 @@ public enum ErrorCode {
     INVALID_HOLD_ORDER_STATUS(HttpStatus.BAD_REQUEST, "HOLD_002", "현재 주문 상태에서는 홀드를 생성할 수 없습니다."),
     INVALID_HOLD_QUANTITY(HttpStatus.BAD_REQUEST, "HOLD_003", "홀드 수량은 1 이상이어야 합니다."),
     INVALID_HOLD_EXPIRES_AT(HttpStatus.BAD_REQUEST, "HOLD_004", "홀드 만료 시각이 올바르지 않습니다."),
-    INVALID_HOLD_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "HOLD_005", "허용되지 않는 홀드 상태 전이입니다.");
+    INVALID_HOLD_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "HOLD_005", "허용되지 않는 홀드 상태 전이입니다."),
+
+    INVALID_PAYMENT_ORDER(HttpStatus.BAD_REQUEST, "PAYMENT_001", "결제 주문 정보가 올바르지 않습니다."),
+    INVALID_PAYMENT_ORDER_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_002", "현재 주문 상태에서는 결제를 생성할 수 없습니다."),
+    INVALID_PAYMENT_CODE(HttpStatus.BAD_REQUEST, "PAYMENT_003", "결제 코드가 올바르지 않습니다."),
+    INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "PAYMENT_004", "결제 금액은 0 이상이어야 합니다."),
+    INVALID_PAYMENT_REQUESTED_AT(HttpStatus.BAD_REQUEST, "PAYMENT_005", "결제 요청 시각이 올바르지 않습니다."),
+    INVALID_PAYMENT_APPROVED_AT(HttpStatus.BAD_REQUEST, "PAYMENT_006", "결제 승인 시각이 올바르지 않습니다."),
+    INVALID_PAYMENT_FAILED_AT(HttpStatus.BAD_REQUEST, "PAYMENT_007", "결제 실패 시각이 올바르지 않습니다."),
+    INVALID_PAYMENT_FAILURE_REASON(HttpStatus.BAD_REQUEST, "PAYMENT_008", "결제 실패 사유가 올바르지 않습니다."),
+    INVALID_PAYMENT_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "PAYMENT_009", "허용되지 않는 결제 상태 전이입니다."),
+
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_010", "결제 정보를 찾을 수 없습니다."),
+    PAYMENT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_011", "결제 코드 생성에 실패했습니다."),
+    PAYMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PAYMENT_012", "이미 결제 요청이 존재하는 주문입니다."),
+    HOLD_NOT_FOUND(HttpStatus.NOT_FOUND, "HOLD_006", "홀드 정보를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
