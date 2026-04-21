@@ -78,7 +78,19 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_010", "결제 정보를 찾을 수 없습니다."),
     PAYMENT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_011", "결제 코드 생성에 실패했습니다."),
     PAYMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PAYMENT_012", "이미 결제 요청이 존재하는 주문입니다."),
-    HOLD_NOT_FOUND(HttpStatus.NOT_FOUND, "HOLD_006", "홀드 정보를 찾을 수 없습니다.");
+    HOLD_NOT_FOUND(HttpStatus.NOT_FOUND, "HOLD_006", "홀드 정보를 찾을 수 없습니다."),
+
+    INVALID_SETTLEMENT_ORDER(HttpStatus.BAD_REQUEST, "SETTLEMENT_001", "정산 주문 정보가 올바르지 않습니다."),
+    INVALID_SETTLEMENT_ORDER_STATUS(HttpStatus.BAD_REQUEST, "SETTLEMENT_002", "확정된 주문만 정산을 생성할 수 있습니다."),
+    INVALID_SETTLEMENT_SELLER(HttpStatus.BAD_REQUEST, "SETTLEMENT_003", "정산 판매자 정보가 올바르지 않습니다."),
+    INVALID_SETTLEMENT_CODE(HttpStatus.BAD_REQUEST, "SETTLEMENT_004", "정산 코드가 올바르지 않습니다."),
+    INVALID_SETTLEMENT_AMOUNT(HttpStatus.BAD_REQUEST, "SETTLEMENT_005", "정산 금액은 0 이상이어야 합니다."),
+    INVALID_SETTLEMENT_CONFIRMED_AT(HttpStatus.BAD_REQUEST, "SETTLEMENT_006", "정산 확정 시각이 올바르지 않습니다."),
+    INVALID_SETTLEMENT_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "SETTLEMENT_007", "허용되지 않는 정산 상태 전이입니다."),
+
+    SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SETTLEMENT_008", "정산 정보를 찾을 수 없습니다."),
+
+    SETTLEMENT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SETTLEMENT_009", "정산 코드 생성에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;

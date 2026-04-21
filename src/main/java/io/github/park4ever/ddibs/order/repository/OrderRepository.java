@@ -1,6 +1,7 @@
 package io.github.park4ever.ddibs.order.repository;
 
 import io.github.park4ever.ddibs.order.domain.Order;
+import io.github.park4ever.ddibs.order.domain.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,4 +16,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdAndMemberId(Long orderId, Long memberId);
 
     List<Order> findAllByMemberIdOrderByIdDesc(Long memberId);
+
+    List<Order> findAllByStatusOrderByIdAsc(OrderStatus status);
 }
