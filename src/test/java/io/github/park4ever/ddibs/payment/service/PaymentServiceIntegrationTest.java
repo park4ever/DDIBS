@@ -172,7 +172,7 @@ public class PaymentServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("이미 결제 요청이 존재하는 주문은 중복 결제 요청할 수 없다.")
+    @DisplayName("이미 결제가 완료된 주문은 다시 결제 요청할 수 없다.")
     void requestPayment_fail_whenPaymentAlreadyExists() {
         // given
         OrderTestFixture fixture = createOrderFixture(10);
@@ -197,7 +197,7 @@ public class PaymentServiceIntegrationTest {
         assertThatThrownBy(() -> paymentService.requestPayment(fixture.member().getId(), secondRequest))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
-                .isEqualTo(ErrorCode.PAYMENT_ALREADY_EXISTS);
+                .isEqualTo(ErrorCode.INVALID_PAYMENT_ORDER_STATUS);
 
         assertThat(paymentRepository.count()).isEqualTo(paymentCountBefore);
     }

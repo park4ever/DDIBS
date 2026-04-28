@@ -7,6 +7,8 @@ import io.github.park4ever.ddibs.holdreservation.domain.HoldStatus;
 import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
 import io.github.park4ever.ddibs.launchvariant.domain.LaunchVariant;
 import io.github.park4ever.ddibs.launchvariant.repository.LaunchVariantRepository;
+import io.github.park4ever.ddibs.order.domain.Order;
+import io.github.park4ever.ddibs.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,35 +23,39 @@ public class HoldExpirationBatchService {
 
     private final HoldReservationRepository holdReservationRepository;
     private final LaunchVariantRepository launchVariantRepository;
+    private final OrderRepository orderRepository;
 
     @Transactional
     public int expireHolds() {
         LocalDateTime now = LocalDateTime.now();
 
-        List<HoldReservation> expiredTargets =
-                holdReservationRepository.findAllByStatusAndExpiresAtBeforeOrderByExpiresAtAsc(
-                HoldStatus.ACTIVE,
-                now
-        );
+        List<Long> expiredOrderIds = holdReservationRepository.findExpiredOrderIds(HoldStatus.ACTIVE, now);
 
         int expiredCount = 0;
 
-        for (HoldReservation holdReservation : expiredTargets) {
+        for (Long orderId : expiredOrderIds) {
+            Order order = orderRepository.findByIdForUpdate(orderId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+            HoldReservation holdReservation = holdReservationRepository.findByOrderIdForUpdate(orderId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.HOLD_NOT_FOUND));
+
+            if (!order.isCreated()) {
+                continue;
+            }
+
             if (!holdReservation.isExpiredAt(now)) {
                 continue;
             }
 
             LaunchVariant launchVariant = launchVariantRepository.findByIdForUpdate(
-                    holdReservation.getOrder().getLaunchVariant().getId()
+                    order.getLaunchVariant().getId()
             ).orElseThrow(() -> new BusinessException(ErrorCode.LAUNCH_VARIANT_NOT_FOUND));
 
             holdReservation.expire();
+            order.expireHold();
+            launchVariant.restoreAvailableStock(order.getQuantity());
 
-            if (holdReservation.getOrder().isCreated()) {
-                holdReservation.getOrder().expireHold();
-            }
-
-            launchVariant.restoreAvailableStock(holdReservation.getQuantity());
             expiredCount++;
         }
 

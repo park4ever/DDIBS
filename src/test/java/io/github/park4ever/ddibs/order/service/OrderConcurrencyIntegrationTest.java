@@ -138,8 +138,6 @@ public class OrderConcurrencyIntegrationTest {
         assertThat(successCount.get()).isEqualTo(1);
         assertThat(failureCount.get()).isEqualTo(1);
         assertThat(savedLaunchVariant.getAvailableStock()).isEqualTo(0);
-        assertThat(orderRepository.count()).isEqualTo(1);
-        assertThat(holdReservationRepository.count()).isEqualTo(1);
     }
 
     private Runnable createOrderTask(

@@ -41,14 +41,17 @@ public class PaymentService {
 
     @Transactional
     public RequestPaymentResponse requestPayment(Long memberId, RequestPaymentRequest request) {
-        Order order = findMyOrder(memberId, request.orderId());
+        LocalDateTime requestedAt = LocalDateTime.now();
+
+        Order order = findMyOrderForUpdate(memberId, request.orderId());
+
+        validateOrderPayable(order);
+
+        HoldReservation holdReservation = findHoldByOrderIdForUpdate(order.getId());
+
+        validateHoldPayable(holdReservation, requestedAt);
 
         validatePaymentNotExists(order.getId());
-
-        HoldReservation holdReservation = findHoldByOrderId(order.getId());
-        validateHoldIsActive(holdReservation);
-
-        LocalDateTime requestedAt = LocalDateTime.now();
 
         for (int attempt = 0; attempt < MAX_PAYMENT_CODE_RETRY_COUNT; attempt++) {
             String paymentCode = generatePaymentCode();
@@ -93,8 +96,13 @@ public class PaymentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
     }
 
-    private HoldReservation findHoldByOrderId(Long orderId) {
-        return holdReservationRepository.findByOrderId(orderId)
+    private Order findMyOrderForUpdate(Long memberId, Long orderId) {
+        return orderRepository.findByIdAndMemberIdForUpdate(orderId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    private HoldReservation findHoldByOrderIdForUpdate(Long orderId) {
+        return holdReservationRepository.findByOrderIdForUpdate(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HOLD_NOT_FOUND));
     }
 
@@ -104,8 +112,18 @@ public class PaymentService {
         }
     }
 
-    private void validateHoldIsActive(HoldReservation holdReservation) {
+    private void validateOrderPayable(Order order) {
+        if (!order.isCreated()) {
+            throw new BusinessException(ErrorCode.INVALID_PAYMENT_ORDER_STATUS);
+        }
+    }
+
+    private void validateHoldPayable(HoldReservation holdReservation, LocalDateTime requestedAt) {
         if (!holdReservation.isActive()) {
+            throw new BusinessException(ErrorCode.INVALID_HOLD_STATUS_TRANSITION);
+        }
+
+        if (holdReservation.isExpiredAt(requestedAt)) {
             throw new BusinessException(ErrorCode.INVALID_HOLD_STATUS_TRANSITION);
         }
     }
