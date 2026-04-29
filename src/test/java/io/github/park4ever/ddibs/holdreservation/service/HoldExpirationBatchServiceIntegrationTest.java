@@ -1,5 +1,6 @@
 package io.github.park4ever.ddibs.holdreservation.service;
 
+import io.github.park4ever.ddibs.holdreservation.batch.HoldExpirationBatchResult;
 import io.github.park4ever.ddibs.holdreservation.domain.HoldReservation;
 import io.github.park4ever.ddibs.holdreservation.domain.HoldStatus;
 import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
@@ -29,8 +30,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,14 +86,17 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         holdReservationRepository.flush();
 
         //when
-        int expiredCount = holdExpirationBatchService.expireHolds();
+        HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
 
         //then
         HoldReservation expireHold = holdReservationRepository.findByOrderId(fixture.order.getId()).orElseThrow();
         Order expiredOrder = orderRepository.findById(fixture.order.getId()).orElseThrow();
         LaunchVariant restoredLaunchVariant = launchVariantRepository.findById(fixture.launchVariant.getId()).orElseThrow();
 
-        assertThat(expiredCount).isEqualTo(1);
+        assertThat(result.candidateCount()).isEqualTo(1);
+        assertThat(result.expiredCount()).isEqualTo(1);
+        assertThat(result.orderStateSkippedCount()).isEqualTo(0);
+        assertThat(result.holdStateSkippedCount()).isEqualTo(0);
         assertThat(expireHold.getStatus()).isEqualTo(HoldStatus.EXPIRED);
         assertThat(expiredOrder.getStatus()).isEqualTo(OrderStatus.HOLD_EXPIRED);
         assertThat(restoredLaunchVariant.getAvailableStock()).isEqualTo(10);
@@ -111,14 +113,17 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         holdReservationRepository.flush();
 
         //when
-        int expiredCount = holdExpirationBatchService.expireHolds();
+        HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
 
         //then
         HoldReservation unchangedHold = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
         Order unchangedOrder = orderRepository.findById(fixture.order().getId()).orElseThrow();
         LaunchVariant launchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
 
-        assertThat(expiredCount).isEqualTo(0);
+        assertThat(result.candidateCount()).isEqualTo(0);
+        assertThat(result.expiredCount()).isEqualTo(0);
+        assertThat(result.orderStateSkippedCount()).isEqualTo(0);
+        assertThat(result.holdStateSkippedCount()).isEqualTo(0);
         assertThat(unchangedHold.getStatus()).isEqualTo(HoldStatus.CONSUMED);
         assertThat(unchangedOrder.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         assertThat(launchVariant.getAvailableStock()).isEqualTo(9);
@@ -131,14 +136,17 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         PendingOrderFixture fixture = createPendingOrderFixture(10);
 
         // when
-        int expiredCount = holdExpirationBatchService.expireHolds();
+        HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
 
         // then
         HoldReservation holdReservation = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
         Order order = orderRepository.findById(fixture.order().getId()).orElseThrow();
         LaunchVariant launchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
 
-        assertThat(expiredCount).isEqualTo(0);
+        assertThat(result.candidateCount()).isEqualTo(0);
+        assertThat(result.expiredCount()).isEqualTo(0);
+        assertThat(result.orderStateSkippedCount()).isEqualTo(0);
+        assertThat(result.holdStateSkippedCount()).isEqualTo(0);
         assertThat(holdReservation.getStatus()).isEqualTo(HoldStatus.ACTIVE);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
         assertThat(launchVariant.getAvailableStock()).isEqualTo(9);

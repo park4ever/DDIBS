@@ -2,6 +2,7 @@ package io.github.park4ever.ddibs.holdreservation.service;
 
 import io.github.park4ever.ddibs.exception.BusinessException;
 import io.github.park4ever.ddibs.exception.ErrorCode;
+import io.github.park4ever.ddibs.holdreservation.batch.HoldExpirationBatchResult;
 import io.github.park4ever.ddibs.holdreservation.domain.HoldReservation;
 import io.github.park4ever.ddibs.holdreservation.domain.HoldStatus;
 import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
@@ -26,12 +27,14 @@ public class HoldExpirationBatchService {
     private final OrderRepository orderRepository;
 
     @Transactional
-    public int expireHolds() {
+    public HoldExpirationBatchResult expireHolds() {
         LocalDateTime now = LocalDateTime.now();
 
         List<Long> expiredOrderIds = holdReservationRepository.findExpiredOrderIds(HoldStatus.ACTIVE, now);
 
         int expiredCount = 0;
+        int orderStateSkippedCount = 0;
+        int holdStateSkippedCount = 0;
 
         for (Long orderId : expiredOrderIds) {
             Order order = orderRepository.findByIdForUpdate(orderId)
@@ -41,10 +44,12 @@ public class HoldExpirationBatchService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.HOLD_NOT_FOUND));
 
             if (!order.isCreated()) {
+                orderStateSkippedCount++;
                 continue;
             }
 
             if (!holdReservation.isExpiredAt(now)) {
+                holdStateSkippedCount++;
                 continue;
             }
 
@@ -59,6 +64,11 @@ public class HoldExpirationBatchService {
             expiredCount++;
         }
 
-        return expiredCount;
+        return new HoldExpirationBatchResult(
+                expiredOrderIds.size(),
+                expiredCount,
+                orderStateSkippedCount,
+                holdStateSkippedCount
+        );
     }
 }

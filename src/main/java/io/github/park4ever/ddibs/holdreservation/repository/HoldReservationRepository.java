@@ -17,11 +17,6 @@ public interface HoldReservationRepository extends JpaRepository<HoldReservation
 
     boolean existsByOrderId(Long orderId);
 
-    List<HoldReservation> findAllByStatusAndExpiresAtBeforeOrderByExpiresAtAsc(
-            HoldStatus status,
-            LocalDateTime expiresAt
-    );
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select h
