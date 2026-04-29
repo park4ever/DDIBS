@@ -5,6 +5,7 @@ import io.github.park4ever.ddibs.exception.ErrorCode;
 import io.github.park4ever.ddibs.order.domain.Order;
 import io.github.park4ever.ddibs.order.domain.OrderStatus;
 import io.github.park4ever.ddibs.order.repository.OrderRepository;
+import io.github.park4ever.ddibs.settlement.batch.SettlementBatchResult;
 import io.github.park4ever.ddibs.settlement.domain.Settlement;
 import io.github.park4ever.ddibs.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,24 +32,31 @@ public class SettlementBatchService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional
-    public int generateSettlements() {
-        List<Order> confirmedOrders = orderRepository.findAllByStatusOrderByIdAsc(OrderStatus.CONFIRMED);
+    public SettlementBatchResult generateSettlements() {
+        List<Order> candidates = orderRepository.findSettlementCandidates(OrderStatus.CONFIRMED);
 
         int createdCount = 0;
+        int raceSkippedCount = 0;
 
-        for (Order order : confirmedOrders) {
-            if (settlementRepository.existsByOrderId(order.getId())) {
+        for (Order order : candidates) {
+            boolean created = tryCreateSettlement(order);
+
+            if (created) {
+                createdCount++;
                 continue;
             }
 
-            createSettlement(order);
-            createdCount++;
+            raceSkippedCount++;
         }
 
-        return createdCount;
+        return new SettlementBatchResult(
+                candidates.size(),
+                createdCount,
+                raceSkippedCount
+        );
     }
 
-    private void createSettlement(Order order) {
+    private boolean tryCreateSettlement(Order order) {
         for (int attempt = 0; attempt < MAX_SETTLEMENT_CODE_RETRY_COUNT; attempt++) {
             String settlementCode = generateSettlementCode();
 
@@ -60,10 +68,10 @@ public class SettlementBatchService {
 
             try {
                 settlementRepository.saveAndFlush(settlement);
-                return;
+                return true;
             } catch (DataIntegrityViolationException exception) {
                 if (settlementRepository.existsByOrderId(order.getId())) {
-                    return;
+                    return false;
                 }
 
                 if (attempt == MAX_SETTLEMENT_CODE_RETRY_COUNT - 1) {

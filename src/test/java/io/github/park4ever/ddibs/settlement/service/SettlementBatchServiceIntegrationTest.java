@@ -19,6 +19,7 @@ import io.github.park4ever.ddibs.productvariant.domain.ProductVariant;
 import io.github.park4ever.ddibs.productvariant.repository.ProductVariantRepository;
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
+import io.github.park4ever.ddibs.settlement.batch.SettlementBatchResult;
 import io.github.park4ever.ddibs.settlement.domain.Settlement;
 import io.github.park4ever.ddibs.settlement.domain.SettlementStatus;
 import io.github.park4ever.ddibs.settlement.repository.SettlementRepository;
@@ -79,12 +80,14 @@ class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTes
         ConfirmedOrderFixture fixture = createConfirmedOrderFixture();
 
         // when
-        int createdCount = settlementBatchService.generateSettlements();
+        SettlementBatchResult result = settlementBatchService.generateSettlements();
 
         // then
         Settlement settlement = settlementRepository.findByOrderId(fixture.order().getId()).orElseThrow();
 
-        assertThat(createdCount).isEqualTo(1);
+        assertThat(result.candidateCount()).isEqualTo(1);
+        assertThat(result.createdCount()).isEqualTo(1);
+        assertThat(result.raceSkippedCount()).isEqualTo(0);
         assertThat(settlement.getOrder().getId()).isEqualTo(fixture.order().getId());
         assertThat(settlement.getSellerId()).isEqualTo(fixture.order().getSellerId());
         assertThat(settlement.getSettlementAmount()).isEqualByComparingTo(fixture.order().getTotalPrice());
@@ -98,15 +101,21 @@ class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTes
         // given
         ConfirmedOrderFixture fixture = createConfirmedOrderFixture();
 
-        int firstCreatedCount = settlementBatchService.generateSettlements();
+        SettlementBatchResult firstResult = settlementBatchService.generateSettlements();
         long settlementCountAfterFirstRun = settlementRepository.count();
 
         // when
-        int secondCreatedCount = settlementBatchService.generateSettlements();
+        SettlementBatchResult secondResult = settlementBatchService.generateSettlements();
 
         // then
-        assertThat(firstCreatedCount).isEqualTo(1);
-        assertThat(secondCreatedCount).isEqualTo(0);
+        assertThat(firstResult.candidateCount()).isEqualTo(1);
+        assertThat(firstResult.createdCount()).isEqualTo(1);
+        assertThat(firstResult.raceSkippedCount()).isEqualTo(0);
+
+        assertThat(secondResult.candidateCount()).isEqualTo(0);
+        assertThat(secondResult.createdCount()).isEqualTo(0);
+        assertThat(secondResult.raceSkippedCount()).isEqualTo(0);
+
         assertThat(settlementRepository.count()).isEqualTo(settlementCountAfterFirstRun);
         assertThat(settlementRepository.findByOrderId(fixture.order().getId())).isPresent();
     }
@@ -118,10 +127,12 @@ class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTes
         PendingOrderFixture fixture = createPendingOrderFixture();
 
         // when
-        int createdCount = settlementBatchService.generateSettlements();
+        SettlementBatchResult result = settlementBatchService.generateSettlements();
 
         // then
-        assertThat(createdCount).isEqualTo(0);
+        assertThat(result.candidateCount()).isEqualTo(0);
+        assertThat(result.createdCount()).isEqualTo(0);
+        assertThat(result.raceSkippedCount()).isEqualTo(0);
         assertThat(settlementRepository.findByOrderId(fixture.order().getId())).isEmpty();
     }
 

@@ -38,4 +38,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             where o.id = :orderId
             """)
     Optional<Order> findByIdForUpdate(Long orderId);
+
+    @Query("""
+            select o
+            from Order o
+            where o.status = :status
+                and not exists (
+                    select 1
+                    from Settlement s
+                    where s.order.id = o.id
+                )
+            order by o.id asc
+            """)
+    List<Order> findSettlementCandidates(OrderStatus status);
 }

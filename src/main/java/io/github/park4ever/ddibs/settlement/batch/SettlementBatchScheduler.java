@@ -15,13 +15,18 @@ public class SettlementBatchScheduler {
 
     @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
     public void generateSettlements() {
-        int createdCount = settlementBatchService.generateSettlements();
+        SettlementBatchResult result = settlementBatchService.generateSettlements();
 
-        if (createdCount > 0) {
-            log.info("정산 생성 배치 완료 - 생성 건수: {}", createdCount);
+        if (result.candidateCount() == 0) {
+            log.debug("정산 생성 배치 완료 - 생성 대상 없음");
             return;
         }
 
-        log.debug("정산 생성 배치 완료 - 생성 대상 없음");
+        log.info(
+                "정산 생성 배치 완료 - 후보: {}, 생성: {}, 경쟁 스킵: {}",
+                result.candidateCount(),
+                result.createdCount(),
+                result.raceSkippedCount()
+        );
     }
 }
