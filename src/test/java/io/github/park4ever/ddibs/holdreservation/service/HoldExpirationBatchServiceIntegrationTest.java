@@ -24,6 +24,7 @@ import io.github.park4ever.ddibs.productvariant.domain.ProductVariant;
 import io.github.park4ever.ddibs.productvariant.repository.ProductVariantRepository;
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
+import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,10 +40,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-public class HoldExpirationBatchServiceIntegrationTest {
+public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
 
     @Autowired
     private HoldExpirationBatchService holdExpirationBatchService;

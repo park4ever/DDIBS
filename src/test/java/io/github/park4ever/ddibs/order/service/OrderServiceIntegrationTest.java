@@ -22,6 +22,7 @@ import io.github.park4ever.ddibs.productvariant.domain.ProductVariant;
 import io.github.park4ever.ddibs.productvariant.repository.ProductVariantRepository;
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
+import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,10 +37,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-public class OrderServiceIntegrationTest {
+public class OrderServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
 
     @Autowired
     private OrderService orderService;

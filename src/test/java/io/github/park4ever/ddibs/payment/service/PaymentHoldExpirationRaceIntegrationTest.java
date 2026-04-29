@@ -26,6 +26,7 @@ import io.github.park4ever.ddibs.productvariant.domain.ProductVariant;
 import io.github.park4ever.ddibs.productvariant.repository.ProductVariantRepository;
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
+import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,9 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
-public class PaymentHoldExpirationRaceIntegrationTest {
+public class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerIntegrationTestSupport {
 
     @Autowired
     private OrderService orderService;

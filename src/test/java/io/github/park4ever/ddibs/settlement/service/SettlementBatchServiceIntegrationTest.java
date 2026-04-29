@@ -22,6 +22,7 @@ import io.github.park4ever.ddibs.seller.repository.SellerRepository;
 import io.github.park4ever.ddibs.settlement.domain.Settlement;
 import io.github.park4ever.ddibs.settlement.domain.SettlementStatus;
 import io.github.park4ever.ddibs.settlement.repository.SettlementRepository;
+import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,10 +36,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class SettlementBatchServiceIntegrationTest {
+class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
 
     @Autowired
     private SettlementBatchService settlementBatchService;
