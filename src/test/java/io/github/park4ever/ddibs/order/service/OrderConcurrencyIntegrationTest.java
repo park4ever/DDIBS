@@ -1,13 +1,13 @@
 package io.github.park4ever.ddibs.order.service;
 
 import io.github.park4ever.ddibs.exception.BusinessException;
+import io.github.park4ever.ddibs.exception.ErrorCode;
 import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
 import io.github.park4ever.ddibs.launch.domain.Launch;
 import io.github.park4ever.ddibs.launch.repository.LaunchRepository;
 import io.github.park4ever.ddibs.launchvariant.domain.LaunchVariant;
 import io.github.park4ever.ddibs.launchvariant.repository.LaunchVariantRepository;
 import io.github.park4ever.ddibs.member.domain.Member;
-import io.github.park4ever.ddibs.member.domain.Role;
 import io.github.park4ever.ddibs.member.repository.MemberRepository;
 import io.github.park4ever.ddibs.order.dto.CreateOrderRequest;
 import io.github.park4ever.ddibs.order.repository.OrderRepository;
@@ -18,12 +18,9 @@ import io.github.park4ever.ddibs.productvariant.repository.ProductVariantReposit
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
 import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,7 +30,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
-public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTestSupport {
+class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTestSupport {
+
+    private static final BigDecimal SALE_PRICE = new BigDecimal("159000.00");
 
     @Autowired
     private OrderService orderService;
@@ -65,24 +64,9 @@ public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTe
     @Test
     @DisplayName("재고가 1개인 발매 상품을 동시에 주문하면 1건만 성공하고 과판매가 발생하지 않는다.")
     void createOrder_concurrently_onlyOneSucceeds() throws Exception {
-        //given
-        Seller seller = createSeller();
-        Product product = createProduct(seller);
-        ProductVariant productVariant = createProductVariant(product);
-
-        LocalDateTime now = LocalDateTime.now();
-        Launch launch = createOpenLaunch(product, now.minusMinutes(1), now.plusMinutes(30));
-        LaunchVariant launchVariant = createLaunchVariant(
-                launch,
-                productVariant,
-                new BigDecimal("159000.00"),
-                1
-        );
-
-        Member memberA = createMember("concurrency-a");
-        Member memberB = createMember("concurrency-b");
-
-        CreateOrderRequest request = new CreateOrderRequest(launchVariant.getId());
+        // given
+        OrderConcurrencyFixture fixture = createConcurrencyFixture();
+        CreateOrderRequest request = new CreateOrderRequest(fixture.launchVariant().getId());
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         CountDownLatch readyLatch = new CountDownLatch(2);
@@ -90,28 +74,28 @@ public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTe
         CountDownLatch doneLatch = new CountDownLatch(2);
 
         AtomicInteger successCount = new AtomicInteger(0);
-        AtomicInteger failureCount = new AtomicInteger(0);
+        AtomicInteger expectedFailureCount = new AtomicInteger(0);
         ConcurrentLinkedQueue<Throwable> unexpectedExceptions = new ConcurrentLinkedQueue<>();
 
         Runnable taskA = createOrderTask(
-                memberA.getId(),
+                fixture.memberA().getId(),
                 request,
                 readyLatch,
                 startLatch,
                 doneLatch,
                 successCount,
-                failureCount,
+                expectedFailureCount,
                 unexpectedExceptions
         );
 
         Runnable taskB = createOrderTask(
-                memberB.getId(),
+                fixture.memberB().getId(),
                 request,
                 readyLatch,
                 startLatch,
                 doneLatch,
                 successCount,
-                failureCount,
+                expectedFailureCount,
                 unexpectedExceptions
         );
 
@@ -121,22 +105,28 @@ public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTe
         boolean allReady = readyLatch.await(5, TimeUnit.SECONDS);
         assertThat(allReady).isTrue();
 
-        //when
+        // when
         startLatch.countDown();
 
         boolean allDone = doneLatch.await(10, TimeUnit.SECONDS);
-        executorService.shutdownNow();
 
-        //then
+        executorService.shutdown();
+        boolean terminated = executorService.awaitTermination(5, TimeUnit.SECONDS);
+
+        // then
         assertThat(allDone).isTrue();
+        assertThat(terminated).isTrue();
         assertThat(unexpectedExceptions).isEmpty();
 
-        LaunchVariant savedLaunchVariant
-                = launchVariantRepository.findById(launchVariant.getId()).orElseThrow();
+        LaunchVariant savedLaunchVariant =
+                launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
 
         assertThat(successCount.get()).isEqualTo(1);
-        assertThat(failureCount.get()).isEqualTo(1);
+        assertThat(expectedFailureCount.get()).isEqualTo(1);
         assertThat(savedLaunchVariant.getAvailableStock()).isEqualTo(0);
+
+        assertThat(orderRepository.count()).isEqualTo(1);
+        assertThat(holdReservationRepository.count()).isEqualTo(1);
     }
 
     private Runnable createOrderTask(
@@ -146,7 +136,7 @@ public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTe
             CountDownLatch startLatch,
             CountDownLatch doneLatch,
             AtomicInteger successCount,
-            AtomicInteger failureCount,
+            AtomicInteger expectedFailureCount,
             ConcurrentLinkedQueue<Throwable> unexpectedExceptions
     ) {
         return () -> {
@@ -157,13 +147,37 @@ public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTe
                 orderService.createOrder(memberId, request);
                 successCount.incrementAndGet();
             } catch (BusinessException exception) {
-                failureCount.incrementAndGet();
+                if (exception.getErrorCode() == ErrorCode.INSUFFICIENT_LAUNCH_VARIANT_STOCK) {
+                    expectedFailureCount.incrementAndGet();
+                } else {
+                    unexpectedExceptions.add(exception);
+                }
             } catch (Throwable throwable) {
                 unexpectedExceptions.add(throwable);
             } finally {
                 doneLatch.countDown();
             }
         };
+    }
+
+    private OrderConcurrencyFixture createConcurrencyFixture() {
+        Seller seller = createSeller();
+        Product product = createProduct(seller);
+        ProductVariant productVariant = createProductVariant(product);
+
+        LocalDateTime now = LocalDateTime.now();
+        Launch launch = createOpenLaunch(product, now.minusMinutes(1), now.plusMinutes(30));
+        LaunchVariant launchVariant = createLaunchVariant(
+                launch,
+                productVariant,
+                SALE_PRICE,
+                1
+        );
+
+        Member memberA = createMember("concurrency-a");
+        Member memberB = createMember("concurrency-b");
+
+        return new OrderConcurrencyFixture(memberA, memberB, launchVariant);
     }
 
     private Member createMember(String prefix) {
@@ -246,5 +260,12 @@ public class OrderConcurrencyIntegrationTest extends MySqlContainerIntegrationTe
 
     private String uniqueSuffix() {
         return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    private record OrderConcurrencyFixture(
+            Member memberA,
+            Member memberB,
+            LaunchVariant launchVariant
+    ) {
     }
 }

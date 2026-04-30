@@ -81,9 +81,7 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         //given
         PendingOrderFixture fixture = createPendingOrderFixture(10);
 
-        HoldReservation holdReservation = holdReservationRepository.findByOrderId(fixture.order.getId()).orElseThrow();
-        ReflectionTestUtils.setField(holdReservation, "expiresAt", LocalDateTime.now().minusMinutes(1));
-        holdReservationRepository.flush();
+        expireHoldNow(fixture.order.getId());
 
         //when
         HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
@@ -103,14 +101,12 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
     }
 
     @Test
-    @DisplayName("ACITVE가 아닌 홀드는 만료 배치 대상이 아니다.")
+    @DisplayName("ACTIVE가 아닌 홀드는 만료 배치 대상이 아니다.")
     void expireHolds_skipWhenHoldIsNotActive() {
         //given
         ConfirmedOrderFixture fixture = createConfirmedOrderFixture(10);
 
-        HoldReservation holdReservation = holdReservationRepository.findByOrderId(fixture.order.getId()).orElseThrow();
-        ReflectionTestUtils.setField(holdReservation, "expiresAt", LocalDateTime.now().minusMinutes(1));
-        holdReservationRepository.flush();
+        expireHoldNow(fixture.order.getId());
 
         //when
         HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
@@ -152,6 +148,12 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         assertThat(launchVariant.getAvailableStock()).isEqualTo(9);
     }
 
+    private void expireHoldNow(Long orderId) {
+        HoldReservation holdReservation = holdReservationRepository.findByOrderId(orderId).orElseThrow();
+        ReflectionTestUtils.setField(holdReservation, "expiresAt", LocalDateTime.now().minusMinutes(1));
+        holdReservationRepository.flush();
+    }
+
     private PendingOrderFixture createPendingOrderFixture(int totalStock) {
         Member member = createMember();
         Seller seller = createSeller();
@@ -184,10 +186,12 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
     }
 
     private Member createMember() {
+        String suffix = uniqueSuffix();
+
         Member member = Member.createUser(
-                "user@test.com",
+                "user-" + suffix + "@test.com",
                 "1q2w3e4r!",
-                "testuser"
+                "testuser-" + suffix
         );
 
         return memberRepository.save(member);

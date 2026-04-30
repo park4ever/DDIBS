@@ -29,12 +29,9 @@ import io.github.park4ever.ddibs.productvariant.repository.ProductVariantReposit
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
 import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -44,7 +41,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @Transactional
-public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
+class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
+
+    private static final BigDecimal SALE_PRICE = new BigDecimal("159000.00");
+    private static final String FAILURE_REASON = "카드 승인 실패";
 
     @Autowired
     private PaymentService paymentService;
@@ -79,42 +79,21 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
     @Autowired
     private PaymentRepository paymentRepository;
 
-    private OrderTestFixture createOrderFixture(int totalStock) {
-        Member member = createMember();
-        Seller seller = createSeller();
-        Product product = createProduct(seller);
-        ProductVariant productVariant = createProductVariant(product);
-
-        LocalDateTime now = LocalDateTime.now();
-        Launch launch = createOpenLaunch(product, now.minusMinutes(1), now.plusMinutes(30));
-        LaunchVariant launchVariant = createLaunchVariant(launch, productVariant, new BigDecimal("159000.00"), totalStock);
-
-        CreateOrderResponse orderResponse = orderService.createOrder(
-                member.getId(),
-                new CreateOrderRequest(launchVariant.getId())
-        );
-
-        Order order = orderRepository.findById(orderResponse.id()).orElseThrow();
-
-        return new OrderTestFixture(member, order, launchVariant);
-    }
-
     @Test
     @DisplayName("결제 성공 시, Payment는 SUCCESS가 되고 주문 확정 및 홀드 소비가 수행된다.")
     void requestPayment_success() {
-        //given
-        OrderTestFixture fixture = createOrderFixture(10);
+        // given
+        PendingOrderFixture fixture = createPendingOrderFixture(10);
+        RequestPaymentRequest request = createSuccessRequest(fixture.order().getId());
 
-        RequestPaymentRequest request = new RequestPaymentRequest(
-                fixture.order.getId(),
-                true,
-                null
-        );
+        LocalDateTime beforeRequest = LocalDateTime.now();
 
-        //when
-        RequestPaymentResponse response = paymentService.requestPayment(fixture.member.getId(), request);
+        // when
+        RequestPaymentResponse response = paymentService.requestPayment(fixture.member().getId(), request);
 
-        //then
+        LocalDateTime afterRequest = LocalDateTime.now();
+
+        // then
         Payment payment = paymentRepository.findById(response.id()).orElseThrow();
         Order order = orderRepository.findById(fixture.order().getId()).orElseThrow();
         HoldReservation holdReservation = holdReservationRepository.findByOrderId(order.getId()).orElseThrow();
@@ -122,16 +101,16 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
 
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
         assertThat(payment.getAmount()).isEqualByComparingTo(order.getTotalPrice());
-        assertThat(payment.getRequestedAt()).isNotNull();
+        assertThat(payment.getRequestedAt()).isBetween(beforeRequest, afterRequest);
         assertThat(payment.getApprovedAt()).isNotNull();
+        assertThat(payment.getApprovedAt()).isAfterOrEqualTo(payment.getRequestedAt());
         assertThat(payment.getFailedAt()).isNull();
         assertThat(payment.getFailureReason()).isNull();
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
-
         assertThat(holdReservation.getStatus()).isEqualTo(HoldStatus.CONSUMED);
 
-        //주문 생성 시 10 -> 9 감소, 결제 성공 시 추가 변화 없음
+        // 주문 생성 시 10 -> 9 감소, 결제 성공 시 추가 변화 없음
         assertThat(launchVariant.getAvailableStock()).isEqualTo(9);
     }
 
@@ -139,16 +118,15 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
     @DisplayName("결제 실패 시, Payment는 FAILED가 되고 주문 실패, 홀드 취소, 재고 복구가 수행된다.")
     void requestPayment_fail() {
         // given
-        OrderTestFixture fixture = createOrderFixture(10);
+        PendingOrderFixture fixture = createPendingOrderFixture(10);
+        RequestPaymentRequest request = createFailureRequest(fixture.order().getId(), FAILURE_REASON);
 
-        RequestPaymentRequest request = new RequestPaymentRequest(
-                fixture.order().getId(),
-                false,
-                "카드 승인 실패"
-        );
+        LocalDateTime beforeRequest = LocalDateTime.now();
 
         // when
         RequestPaymentResponse response = paymentService.requestPayment(fixture.member().getId(), request);
+
+        LocalDateTime afterRequest = LocalDateTime.now();
 
         // then
         Payment payment = paymentRepository.findById(response.id()).orElseThrow();
@@ -157,13 +135,13 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
         LaunchVariant launchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
 
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
-        assertThat(payment.getRequestedAt()).isNotNull();
+        assertThat(payment.getRequestedAt()).isBetween(beforeRequest, afterRequest);
         assertThat(payment.getApprovedAt()).isNull();
         assertThat(payment.getFailedAt()).isNotNull();
-        assertThat(payment.getFailureReason()).isEqualTo("카드 승인 실패");
+        assertThat(payment.getFailedAt()).isAfterOrEqualTo(payment.getRequestedAt());
+        assertThat(payment.getFailureReason()).isEqualTo(FAILURE_REASON);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
-
         assertThat(holdReservation.getStatus()).isEqualTo(HoldStatus.CANCELLED);
 
         // 주문 생성 시 10 -> 9 감소, 결제 실패 시 다시 10으로 복구
@@ -174,23 +152,14 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
     @DisplayName("이미 결제가 완료된 주문은 다시 결제 요청할 수 없다.")
     void requestPayment_fail_whenPaymentAlreadyExists() {
         // given
-        OrderTestFixture fixture = createOrderFixture(10);
+        PendingOrderFixture fixture = createPendingOrderFixture(10);
 
-        RequestPaymentRequest firstRequest = new RequestPaymentRequest(
-                fixture.order().getId(),
-                true,
-                null
-        );
-
+        RequestPaymentRequest firstRequest = createSuccessRequest(fixture.order().getId());
         paymentService.requestPayment(fixture.member().getId(), firstRequest);
 
         long paymentCountBefore = paymentRepository.count();
 
-        RequestPaymentRequest secondRequest = new RequestPaymentRequest(
-                fixture.order().getId(),
-                true,
-                null
-        );
+        RequestPaymentRequest secondRequest = createSuccessRequest(fixture.order().getId());
 
         // when & then
         assertThatThrownBy(() -> paymentService.requestPayment(fixture.member().getId(), secondRequest))
@@ -198,14 +167,50 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.INVALID_PAYMENT_ORDER_STATUS);
 
+        Order order = orderRepository.findById(fixture.order().getId()).orElseThrow();
+        HoldReservation holdReservation = holdReservationRepository.findByOrderId(order.getId()).orElseThrow();
+        LaunchVariant launchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
+
         assertThat(paymentRepository.count()).isEqualTo(paymentCountBefore);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(holdReservation.getStatus()).isEqualTo(HoldStatus.CONSUMED);
+        assertThat(launchVariant.getAvailableStock()).isEqualTo(9);
+    }
+
+    private PendingOrderFixture createPendingOrderFixture(int totalStock) {
+        Member member = createMember();
+        Seller seller = createSeller();
+        Product product = createProduct(seller);
+        ProductVariant productVariant = createProductVariant(product);
+
+        LocalDateTime now = LocalDateTime.now();
+        Launch launch = createOpenLaunch(product, now.minusMinutes(1), now.plusMinutes(30));
+        LaunchVariant launchVariant = createLaunchVariant(launch, productVariant, SALE_PRICE, totalStock);
+
+        CreateOrderResponse orderResponse = orderService.createOrder(
+                member.getId(),
+                new CreateOrderRequest(launchVariant.getId())
+        );
+
+        Order order = orderRepository.findById(orderResponse.id()).orElseThrow();
+        return new PendingOrderFixture(member, order, launchVariant);
+    }
+
+    private RequestPaymentRequest createSuccessRequest(Long orderId) {
+        return new RequestPaymentRequest(orderId, true, null);
+    }
+
+    private RequestPaymentRequest createFailureRequest(Long orderId, String failureReason) {
+        return new RequestPaymentRequest(orderId, false, failureReason);
     }
 
     private Member createMember() {
+        String suffix = uniqueSuffix();
+
         Member member = Member.createUser(
-                "user@test.com",
+                "user-" + suffix + "@test.com",
                 "1q2w3e4r!",
-                "testuser"
+                "testuser-" + suffix
         );
 
         return memberRepository.save(member);
@@ -281,7 +286,7 @@ public class PaymentServiceIntegrationTest extends MySqlContainerIntegrationTest
         return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    private record OrderTestFixture(
+    private record PendingOrderFixture(
             Member member,
             Order order,
             LaunchVariant launchVariant

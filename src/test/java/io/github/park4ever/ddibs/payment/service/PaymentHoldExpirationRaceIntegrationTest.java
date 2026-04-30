@@ -1,5 +1,7 @@
 package io.github.park4ever.ddibs.payment.service;
 
+import io.github.park4ever.ddibs.exception.BusinessException;
+import io.github.park4ever.ddibs.exception.ErrorCode;
 import io.github.park4ever.ddibs.holdreservation.domain.HoldReservation;
 import io.github.park4ever.ddibs.holdreservation.domain.HoldStatus;
 import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
@@ -27,23 +29,23 @@ import io.github.park4ever.ddibs.productvariant.repository.ProductVariantReposit
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
 import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerIntegrationTestSupport {
+class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerIntegrationTestSupport {
+
+    private static final BigDecimal SALE_PRICE = new BigDecimal("159000.00");
 
     @Autowired
     private OrderService orderService;
@@ -86,16 +88,9 @@ public class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerInte
     void paymentSuccess_and_holdExpiration_race() throws Exception {
         // given
         PendingOrderFixture fixture = createPendingOrderFixture(1);
+        expireHoldNow(fixture.order().getId());
 
-        HoldReservation holdReservation = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
-        ReflectionTestUtils.setField(holdReservation, "expiresAt", LocalDateTime.now().minusSeconds(5));
-        holdReservationRepository.saveAndFlush(holdReservation);
-
-        RequestPaymentRequest request = new RequestPaymentRequest(
-                fixture.order().getId(),
-                true,
-                null
-        );
+        RequestPaymentRequest request = createSuccessRequest(fixture.order().getId());
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         CountDownLatch readyLatch = new CountDownLatch(2);
@@ -138,34 +133,45 @@ public class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerInte
         startLatch.countDown();
 
         boolean allDone = doneLatch.await(10, TimeUnit.SECONDS);
-        assertThat(allDone).isTrue();
 
         paymentFuture.get(1, TimeUnit.SECONDS);
         batchFuture.get(1, TimeUnit.SECONDS);
-        executorService.shutdownNow();
+
+        executorService.shutdown();
+        boolean terminated = executorService.awaitTermination(5, TimeUnit.SECONDS);
 
         // then
+        assertThat(allDone).isTrue();
+        assertThat(terminated).isTrue();
         assertThat(batchThrowable.get()).isNull();
+
+        if (paymentThrowable.get() != null) {
+            assertThat(paymentThrowable.get()).isInstanceOf(BusinessException.class);
+            BusinessException exception = (BusinessException) paymentThrowable.get();
+            assertThat(exception.getErrorCode())
+                    .isIn(expectedPaymentFailureErrorCodes());
+        }
 
         Order savedOrder = orderRepository.findById(fixture.order().getId()).orElseThrow();
         HoldReservation savedHold = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
         LaunchVariant savedLaunchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
         Payment savedPayment = paymentRepository.findByOrderId(fixture.order().getId()).orElse(null);
 
-        boolean paymentWon =
-                paymentThrowable.get() == null
-                        && savedPayment != null
-                        && savedPayment.getStatus() == PaymentStatus.SUCCESS
-                        && savedOrder.getStatus() == OrderStatus.CONFIRMED
-                        && savedHold.getStatus() == HoldStatus.CONSUMED
-                        && savedLaunchVariant.getAvailableStock() == 0;
+        boolean paymentWon = isPaymentWon(
+                paymentThrowable.get(),
+                savedPayment,
+                savedOrder,
+                savedHold,
+                savedLaunchVariant
+        );
 
-        boolean expirationWon =
-                paymentThrowable.get() != null
-                        && savedPayment == null
-                        && savedOrder.getStatus() == OrderStatus.HOLD_EXPIRED
-                        && savedHold.getStatus() == HoldStatus.EXPIRED
-                        && savedLaunchVariant.getAvailableStock() == 1;
+        boolean expirationWon = isExpirationWon(
+                paymentThrowable.get(),
+                savedPayment,
+                savedOrder,
+                savedHold,
+                savedLaunchVariant
+        );
 
         assertThat(paymentWon || expirationWon).isTrue();
     }
@@ -181,7 +187,7 @@ public class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerInte
         LaunchVariant launchVariant = createLaunchVariant(
                 launch,
                 productVariant,
-                new BigDecimal("159000.00"),
+                SALE_PRICE,
                 totalStock
         );
 
@@ -192,6 +198,52 @@ public class PaymentHoldExpirationRaceIntegrationTest extends MySqlContainerInte
 
         Order order = orderRepository.findById(orderResponse.id()).orElseThrow();
         return new PendingOrderFixture(member, order, launchVariant);
+    }
+
+    private void expireHoldNow(Long orderId) {
+        HoldReservation holdReservation = holdReservationRepository.findByOrderId(orderId).orElseThrow();
+        ReflectionTestUtils.setField(holdReservation, "expiresAt", LocalDateTime.now().minusSeconds(5));
+        holdReservationRepository.saveAndFlush(holdReservation);
+    }
+
+    private RequestPaymentRequest createSuccessRequest(Long orderId) {
+        return new RequestPaymentRequest(orderId, true, null);
+    }
+
+    private Set<ErrorCode> expectedPaymentFailureErrorCodes() {
+        return Set.of(
+                ErrorCode.INVALID_PAYMENT_ORDER_STATUS,
+                ErrorCode.INVALID_HOLD_STATUS_TRANSITION
+        );
+    }
+
+    private boolean isPaymentWon(
+            Throwable paymentThrowable,
+            Payment savedPayment,
+            Order savedOrder,
+            HoldReservation savedHold,
+            LaunchVariant savedLaunchVariant
+    ) {
+        return paymentThrowable == null
+                && savedPayment != null
+                && savedPayment.getStatus() == PaymentStatus.SUCCESS
+                && savedOrder.getStatus() == OrderStatus.CONFIRMED
+                && savedHold.getStatus() == HoldStatus.CONSUMED
+                && savedLaunchVariant.getAvailableStock() == 0;
+    }
+
+    private boolean isExpirationWon(
+            Throwable paymentThrowable,
+            Payment savedPayment,
+            Order savedOrder,
+            HoldReservation savedHold,
+            LaunchVariant savedLaunchVariant
+    ) {
+        return paymentThrowable != null
+                && savedPayment == null
+                && savedOrder.getStatus() == OrderStatus.HOLD_EXPIRED
+                && savedHold.getStatus() == HoldStatus.EXPIRED
+                && savedLaunchVariant.getAvailableStock() == 1;
     }
 
     private Member createMember(String prefix) {

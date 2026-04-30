@@ -182,10 +182,12 @@ class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTes
     }
 
     private Member createMember() {
+        String suffix = uniqueSuffix();
+
         Member member = Member.createUser(
-                "user@test.com",
+                "user-" + suffix + "@test.com",
                 "1q2w3e4r!",
-                "testuser"
+                "testuser-" + suffix
         );
 
         return memberRepository.save(member);
