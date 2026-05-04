@@ -59,13 +59,6 @@ public class LaunchService {
         return LaunchResponse.from(launch);
     }
 
-    public List<LaunchSummaryResponse> getLaunches() {
-        return launchRepository.findAll(Sort.by(Sort.Direction.DESC, "id"))
-                .stream()
-                .map(LaunchSummaryResponse::from)
-                .toList();
-    }
-
     @Transactional
     public LaunchResponse updateLaunchStatus(Long launchId, UpdateLaunchStatusRequest request) {
         Launch launch = findLaunchById(launchId);
