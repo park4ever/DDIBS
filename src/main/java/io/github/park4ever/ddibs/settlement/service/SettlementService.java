@@ -28,27 +28,6 @@ public class SettlementService {
         return SettlementResponse.from(settlement);
     }
 
-    public List<SettlementSummaryResponse> getSettlements() {
-        return settlementRepository.findAll(Sort.by(Sort.Direction.DESC, "id"))
-                .stream()
-                .map(SettlementSummaryResponse::from)
-                .toList();
-    }
-
-    public List<SettlementSummaryResponse> getSettlementsBySeller(Long sellerId) {
-        return settlementRepository.findAllBySellerIdOrderByIdDesc(sellerId)
-                .stream()
-                .map(SettlementSummaryResponse::from)
-                .toList();
-    }
-
-    public List<SettlementSummaryResponse> getSettlementsByStatus(SettlementStatus status) {
-        return settlementRepository.findAllByStatusOrderByIdDesc(status)
-                .stream()
-                .map(SettlementSummaryResponse::from)
-                .toList();
-    }
-
     @Transactional
     public SettlementResponse updateSettlementStatus(
             Long settlementId,
