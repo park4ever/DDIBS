@@ -24,4 +24,6 @@ public interface LaunchVariantRepository extends JpaRepository<LaunchVariant, Lo
             where lv.id = :launchVariantId
             """)
     Optional<LaunchVariant> findByIdForUpdate(@Param("launchVariantId") Long launchVariantId);
+
+    Optional<LaunchVariant> findByLaunchIdAndProductVariantId(Long launchId, Long productVariantId);
 }
