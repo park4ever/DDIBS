@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router";
+import { NavLink, Outlet, useNavigate } from "react-router";
 import { ApiError } from "../api/client";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -29,9 +29,26 @@ export default function AdminLayout() {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <Link to="/admin/orders">주문 조회</Link>
-                    <Link to="/admin/settlements">정산 조회</Link>
-                    <Link to="/admin/launches">발매 / 재고 조회</Link>
+                    <NavLink
+                        to="/admin/orders"
+                        className={({ isActive }) => (isActive ? "active" : undefined)}
+                    >
+                        주문 조회
+                    </NavLink>
+
+                    <NavLink
+                        to="/admin/settlements"
+                        className={({ isActive }) => (isActive ? "active" : undefined)}
+                    >
+                        정산 조회
+                    </NavLink>
+
+                    <NavLink
+                        to="/admin/launches"
+                        className={({ isActive }) => (isActive ? "active" : undefined)}
+                    >
+                        발매 / 재고 조회
+                    </NavLink>
                 </nav>
             </aside>
 

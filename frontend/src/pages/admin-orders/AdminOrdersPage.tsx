@@ -23,11 +23,15 @@ const initialFilterState = {
     productNameKeyword: "",
 };
 
+function normalizeText(value: string) {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+}
+
 export default function AdminOrdersPage() {
     const [filters, setFilters] = useState(initialFilterState);
-    const [searchCondition, setSearchCondition] = useState<AdminOrderSearchRequest>(
-        {},
-    );
+    const [searchCondition, setSearchCondition] =
+        useState<AdminOrderSearchRequest>({});
     const [page, setPage] = useState(0);
     const [orders, setOrders] = useState<AdminOrderSummaryResponse[]>([]);
     const [totalPages, setTotalPages] = useState(0);
@@ -61,12 +65,16 @@ export default function AdminOrdersPage() {
         event.preventDefault();
 
         const nextCondition: AdminOrderSearchRequest = {
-            orderCode: filters.orderCode || undefined,
+            orderCode: normalizeText(filters.orderCode),
             status: (filters.status as OrderStatus) || undefined,
-            sellerId: filters.sellerId ? Number(filters.sellerId) : undefined,
-            memberId: filters.memberId ? Number(filters.memberId) : undefined,
-            memberEmailKeyword: filters.memberEmailKeyword || undefined,
-            productNameKeyword: filters.productNameKeyword || undefined,
+            sellerId: normalizeText(filters.sellerId)
+                ? Number(filters.sellerId)
+                : undefined,
+            memberId: normalizeText(filters.memberId)
+                ? Number(filters.memberId)
+                : undefined,
+            memberEmailKeyword: normalizeText(filters.memberEmailKeyword),
+            productNameKeyword: normalizeText(filters.productNameKeyword),
         };
 
         setPage(0);
@@ -94,7 +102,7 @@ export default function AdminOrdersPage() {
                 <form className="filter-form" onSubmit={handleSubmit}>
                     <input
                         type="text"
-                        placeholder="주문 코드"
+                        placeholder="정확한 주문 코드"
                         value={filters.orderCode}
                         onChange={(event) =>
                             setFilters((prev) => ({ ...prev, orderCode: event.target.value }))
@@ -115,7 +123,8 @@ export default function AdminOrdersPage() {
                     </select>
 
                     <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="판매자 ID"
                         value={filters.sellerId}
                         onChange={(event) =>
@@ -124,7 +133,8 @@ export default function AdminOrdersPage() {
                     />
 
                     <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="회원 ID"
                         value={filters.memberId}
                         onChange={(event) =>
