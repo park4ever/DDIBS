@@ -102,7 +102,7 @@ export default function AdminOrdersPage() {
                 <form className="filter-form" onSubmit={handleSubmit}>
                     <input
                         type="text"
-                        placeholder="정확한 주문 코드"
+                        placeholder="주문 코드"
                         value={filters.orderCode}
                         onChange={(event) =>
                             setFilters((prev) => ({ ...prev, orderCode: event.target.value }))

@@ -1,8 +1,10 @@
 import { Navigate, createBrowserRouter, RouterProvider } from "react-router";
 import AdminLayout from "../layouts/AdminLayout";
 import { useAuth } from "../contexts/AuthContext";
+import AdminLaunchDetailPage from "../pages/admin-launch-detail/AdminLaunchDetailPage";
 import AdminOrdersPage from "../pages/admin-orders/AdminOrdersPage";
 import AdminLaunchesPage from "../pages/admin-launches/AdminLaunchesPage";
+import AdminSettlementDetailPage from "../pages/admin-settlement-detail/AdminSettlementDetailPage";
 import AdminSettlementsPage from "../pages/admin-settlements/AdminSettlementsPage";
 import LoginPage from "../pages/login/LoginPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -47,8 +49,16 @@ const router = createBrowserRouter([
                 element: <AdminSettlementsPage />,
             },
             {
+                path: "settlements/:settlementId",
+                element: <AdminSettlementDetailPage />,
+            },
+            {
                 path: "launches",
                 element: <AdminLaunchesPage />,
+            },
+            {
+                path: "launches/:launchId",
+                element: <AdminLaunchDetailPage />,
             },
         ],
     },

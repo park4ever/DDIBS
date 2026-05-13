@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router";
 import { ApiError } from "../../api/client";
 import { getAdminLaunches } from "../../api/launches";
 import EmptyState from "../../components/EmptyState";
@@ -101,7 +102,7 @@ export default function AdminLaunchesPage() {
                 <form className="filter-form" onSubmit={handleSubmit}>
                     <input
                         type="text"
-                        placeholder="정확한 발매 코드"
+                        placeholder="발매 코드"
                         value={filters.launchCode}
                         onChange={(event) =>
                             setFilters((prev) => ({
@@ -218,8 +219,22 @@ export default function AdminLaunchesPage() {
                             <tbody>
                             {launches.map((launch) => (
                                 <tr key={launch.id}>
-                                    <td>{launch.launchCode}</td>
-                                    <td>{launch.launchName}</td>
+                                    <td>
+                                        <Link
+                                            to={`/admin/launches/${launch.id}`}
+                                            className="table-link"
+                                        >
+                                            {launch.launchCode}
+                                        </Link>
+                                    </td>
+                                    <td>
+                                        <Link
+                                            to={`/admin/launches/${launch.id}`}
+                                            className="table-link"
+                                        >
+                                            {launch.launchName}
+                                        </Link>
+                                    </td>
                                     <td>
                                         <div>{launch.sellerName}</div>
                                         <div className="table-subtext">ID: {launch.sellerId}</div>

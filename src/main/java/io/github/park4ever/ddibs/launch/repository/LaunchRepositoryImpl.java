@@ -6,15 +6,10 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.github.park4ever.ddibs.launch.domain.LaunchStatus;
-import io.github.park4ever.ddibs.launch.domain.QLaunch;
 import io.github.park4ever.ddibs.launch.dto.admin.AdminLaunchDetailResponse;
 import io.github.park4ever.ddibs.launch.dto.admin.AdminLaunchSearchRequest;
 import io.github.park4ever.ddibs.launch.dto.admin.AdminLaunchSummaryResponse;
 import io.github.park4ever.ddibs.launch.dto.admin.AdminLaunchVariantStockResponse;
-import io.github.park4ever.ddibs.launchvariant.domain.QLaunchVariant;
-import io.github.park4ever.ddibs.product.domain.QProduct;
-import io.github.park4ever.ddibs.productvariant.domain.QProductVariant;
-import io.github.park4ever.ddibs.seller.domain.QSeller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -66,7 +61,7 @@ public class LaunchRepositoryImpl implements LaunchRepositoryCustom {
                 .join(product.seller, seller)
                 .leftJoin(launchVariant).on(launchVariant.launch.eq(launch))
                 .where(
-                        launchCodeEq(condition.launchCode()),
+                        launchCodeContains(condition.launchCode()),
                         statusEq(condition.status()),
                         sellerIdEq(condition.sellerId()),
                         productNameContains(condition.productNameKeyword()),
@@ -96,7 +91,7 @@ public class LaunchRepositoryImpl implements LaunchRepositoryCustom {
                 .join(launch.product, product)
                 .join(product.seller, seller)
                 .where(
-                        launchCodeEq(condition.launchCode()),
+                        launchCodeContains(condition.launchCode()),
                         statusEq(condition.status()),
                         sellerIdEq(condition.sellerId()),
                         productNameContains(condition.productNameKeyword()),
@@ -170,11 +165,17 @@ public class LaunchRepositoryImpl implements LaunchRepositoryCustom {
         return Optional.of(response);
     }
 
-    private BooleanExpression launchCodeEq(String launchCode) {
-        if (launchCode == null || launchCode.isBlank()) {
+    private BooleanExpression launchCodeContains(String launchCode) {
+        if (launchCode == null) {
             return null;
         }
-        return launch.launchCode.eq(launchCode);
+
+        String keyword = launchCode.trim();
+        if (keyword.isBlank()) {
+            return null;
+        }
+
+        return launch.launchCode.containsIgnoreCase(keyword);
     }
 
     private BooleanExpression statusEq(LaunchStatus status) {

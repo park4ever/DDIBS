@@ -1,6 +1,7 @@
 import { apiRequest } from "./client";
 import type { PageResponse } from "../types/order";
 import type {
+    AdminLaunchDetailResponse,
     AdminLaunchSearchRequest,
     AdminLaunchSummaryResponse,
 } from "../types/launch";
@@ -56,4 +57,12 @@ export async function getAdminLaunches(
             method: "GET",
         },
     );
+}
+
+export async function getAdminLaunchDetail(
+    launchId: number,
+): Promise<AdminLaunchDetailResponse> {
+    return apiRequest<AdminLaunchDetailResponse>(`/api/admin/launches/${launchId}`, {
+        method: "GET",
+    });
 }

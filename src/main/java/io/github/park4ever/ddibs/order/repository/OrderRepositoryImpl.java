@@ -4,9 +4,7 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.github.park4ever.ddibs.member.domain.QMember;
 import io.github.park4ever.ddibs.order.domain.OrderStatus;
-import io.github.park4ever.ddibs.order.domain.QOrder;
 import io.github.park4ever.ddibs.order.dto.admin.AdminOrderSearchRequest;
 import io.github.park4ever.ddibs.order.dto.admin.AdminOrderSummaryResponse;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +51,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                 .from(order)
                 .join(order.member, member)
                 .where(
-                        orderCodeEq(condition.orderCode()),
+                        orderCodeContains(condition.orderCode()),
                         statusEq(condition.status()),
                         sellerIdEq(condition.sellerId()),
                         memberIdEq(condition.memberId()),
@@ -72,7 +70,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                 .from(order)
                 .join(order.member, member)
                 .where(
-                        orderCodeEq(condition.orderCode()),
+                        orderCodeContains(condition.orderCode()),
                         statusEq(condition.status()),
                         sellerIdEq(condition.sellerId()),
                         memberIdEq(condition.memberId()),
@@ -86,11 +84,16 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
         return new PageImpl<>(content, pageable, total == null ? 0L : total);
     }
 
-    private BooleanExpression orderCodeEq(String orderCode) {
-        if (orderCode == null || orderCode.isBlank()) {
+    private BooleanExpression orderCodeContains(String orderCode) {
+        if (orderCode == null) {
             return null;
         }
-        return order.orderCode.eq(orderCode);
+
+        String keyword = orderCode.trim();
+        if (keyword.isBlank()) {
+            return null;
+        }
+        return order.orderCode.containsIgnoreCase(keyword);
     }
 
     private BooleanExpression statusEq(OrderStatus status) {

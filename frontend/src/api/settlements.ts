@@ -1,6 +1,7 @@
 import { apiRequest } from "./client";
 import type { PageResponse } from "../types/order";
 import type {
+    AdminSettlementDetailResponse,
     AdminSettlementSearchRequest,
     AdminSettlementSummaryResponse,
 } from "../types/settlement";
@@ -52,6 +53,17 @@ export async function getAdminSettlements(
 
     return apiRequest<PageResponse<AdminSettlementSummaryResponse>>(
         `/api/admin/settlements?${query}`,
+        {
+            method: "GET",
+        },
+    );
+}
+
+export async function getAdminSettlementDetail(
+    settlementId: number,
+): Promise<AdminSettlementDetailResponse> {
+    return apiRequest<AdminSettlementDetailResponse>(
+        `/api/admin/settlements/${settlementId}`,
         {
             method: "GET",
         },

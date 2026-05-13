@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router";
 import { ApiError } from "../../api/client";
 import { getAdminSettlements } from "../../api/settlements";
 import EmptyState from "../../components/EmptyState";
@@ -50,7 +51,11 @@ export default function AdminSettlementsPage() {
         setErrorMessage("");
 
         try {
-            const response = await getAdminSettlements(searchCondition, page, PAGE_SIZE);
+            const response = await getAdminSettlements(
+                searchCondition,
+                page,
+                PAGE_SIZE,
+            );
             setSettlements(response.content);
             setTotalPages(response.totalPages);
         } catch (error) {
@@ -103,7 +108,7 @@ export default function AdminSettlementsPage() {
                 <form className="filter-form" onSubmit={handleSubmit}>
                     <input
                         type="text"
-                        placeholder="정확한 정산 코드"
+                        placeholder="정산 코드"
                         value={filters.settlementCode}
                         onChange={(event) =>
                             setFilters((prev) => ({
@@ -115,7 +120,7 @@ export default function AdminSettlementsPage() {
 
                     <input
                         type="text"
-                        placeholder="정확한 주문 코드"
+                        placeholder="주문 코드"
                         value={filters.orderCode}
                         onChange={(event) =>
                             setFilters((prev) => ({
@@ -214,7 +219,14 @@ export default function AdminSettlementsPage() {
                             <tbody>
                             {settlements.map((settlement) => (
                                 <tr key={settlement.id}>
-                                    <td>{settlement.settlementCode}</td>
+                                    <td>
+                                        <Link
+                                            to={`/admin/settlements/${settlement.id}`}
+                                            className="table-link"
+                                        >
+                                            {settlement.settlementCode}
+                                        </Link>
+                                    </td>
                                     <td>{settlement.orderCode}</td>
                                     <td>{settlement.sellerId}</td>
                                     <td>{formatPrice(settlement.settlementAmount)}</td>

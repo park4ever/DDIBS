@@ -4,8 +4,6 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.github.park4ever.ddibs.order.domain.QOrder;
-import io.github.park4ever.ddibs.settlement.domain.QSettlement;
 import io.github.park4ever.ddibs.settlement.domain.SettlementStatus;
 import io.github.park4ever.ddibs.settlement.dto.admin.AdminSettlementSearchRequest;
 import io.github.park4ever.ddibs.settlement.dto.admin.AdminSettlementSummaryResponse;
@@ -50,8 +48,8 @@ public class SettlementRepositoryImpl implements SettlementRepositoryCustom {
                 .from(settlement)
                 .join(settlement.order, order)
                 .where(
-                        settlementCodeEq(condition.settlementCode()),
-                        orderCodeEq(condition.orderCode()),
+                        settlementCodeContains(condition.settlementCode()),
+                        orderCodeContains(condition.orderCode()),
                         sellerIdEq(condition.sellerId()),
                         statusEq(condition.status()),
                         createdAtGoe(condition.from()),
@@ -67,8 +65,8 @@ public class SettlementRepositoryImpl implements SettlementRepositoryCustom {
                 .from(settlement)
                 .join(settlement.order, order)
                 .where(
-                        settlementCodeEq(condition.settlementCode()),
-                        orderCodeEq(condition.orderCode()),
+                        settlementCodeContains(condition.settlementCode()),
+                        orderCodeContains(condition.orderCode()),
                         sellerIdEq(condition.sellerId()),
                         statusEq(condition.status()),
                         createdAtGoe(condition.from()),
@@ -79,18 +77,28 @@ public class SettlementRepositoryImpl implements SettlementRepositoryCustom {
         return new PageImpl<>(content, pageable, total == null ? 0L : total);
     }
 
-    private BooleanExpression settlementCodeEq(String settlementCode) {
-        if (settlementCode == null || settlementCode.isBlank()) {
+    private BooleanExpression settlementCodeContains(String settlementCode) {
+        if (settlementCode == null) {
             return null;
         }
-        return settlement.settlementCode.eq(settlementCode);
+
+        String keyword = settlementCode.trim();
+        if (keyword.isBlank()) {
+            return null;
+        }
+        return settlement.settlementCode.containsIgnoreCase(keyword);
     }
 
-    private BooleanExpression orderCodeEq(String orderCode) {
-        if (orderCode == null || orderCode.isBlank()) {
+    private BooleanExpression orderCodeContains(String orderCode) {
+        if (orderCode == null) {
             return null;
         }
-        return order.orderCode.eq(orderCode);
+
+        String keyword = orderCode.trim();
+        if (keyword.isBlank()) {
+            return null;
+        }
+        return order.orderCode.containsIgnoreCase(keyword);
     }
 
     private BooleanExpression sellerIdEq(Long sellerId) {

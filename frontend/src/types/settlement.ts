@@ -20,3 +20,15 @@ export interface AdminSettlementSummaryResponse {
     settledAt: string | null;
     createdAt: string;
 }
+
+export interface AdminSettlementDetailResponse {
+    id: number;
+    orderId: number;
+    sellerId: number;
+    settlementCode: string;
+    settlementAmount: number;
+    status: SettlementStatus;
+    settledAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
