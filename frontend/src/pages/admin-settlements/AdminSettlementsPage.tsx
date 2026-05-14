@@ -105,87 +105,111 @@ export default function AdminSettlementsPage() {
             />
 
             <div className="page-card">
-                <form className="filter-form" onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        placeholder="정산 코드"
-                        value={filters.settlementCode}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                settlementCode: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="주문 코드"
-                        value={filters.orderCode}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                orderCode: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="판매자 ID"
-                        value={filters.sellerId}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                sellerId: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <select
-                        value={filters.status}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                status: event.target.value,
-                            }))
-                        }
-                    >
-                        <option value="">전체 상태</option>
-                        <option value="CREATED">CREATED</option>
-                        <option value="CONFIRMED">CONFIRMED</option>
-                    </select>
-
-                    <input
-                        type="datetime-local"
-                        value={filters.from}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                from: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="datetime-local"
-                        value={filters.to}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                to: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <div className="filter-form__actions">
-                        <button type="submit">조회</button>
-                        <button type="button" className="secondary" onClick={handleReset}>
-                            초기화
-                        </button>
+                <div className="filter-panel">
+                    <div className="filter-panel__header">
+                        <h3 className="filter-panel__title">검색 조건</h3>
+                        <p className="filter-panel__description">
+                            정산 코드, 주문 코드, 판매자, 상태, 기간 조건으로 정산 이력을 조회합니다.
+                        </p>
                     </div>
-                </form>
+
+                    <form className="filter-form" onSubmit={handleSubmit}>
+                        <label className="filter-field">
+                            <span className="filter-field__label">정산 코드</span>
+                            <input
+                                type="text"
+                                value={filters.settlementCode}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        settlementCode: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">주문 코드</span>
+                            <input
+                                type="text"
+                                value={filters.orderCode}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        orderCode: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">판매자 ID</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={filters.sellerId}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        sellerId: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">정산 상태</span>
+                            <select
+                                value={filters.status}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        status: event.target.value,
+                                    }))
+                                }
+                            >
+                                <option value="">전체 상태</option>
+                                <option value="CREATED">CREATED</option>
+                                <option value="CONFIRMED">CONFIRMED</option>
+                            </select>
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">시작 시각</span>
+                            <input
+                                type="datetime-local"
+                                value={filters.from}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        from: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">종료 시각</span>
+                            <input
+                                type="datetime-local"
+                                value={filters.to}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        to: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <div className="filter-form__actions">
+                            <button type="submit">조회</button>
+                            <button type="button" className="secondary" onClick={handleReset}>
+                                초기화
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             {isLoading ? <LoadingBox /> : null}
@@ -209,11 +233,11 @@ export default function AdminSettlementsPage() {
                             <tr>
                                 <th>정산 코드</th>
                                 <th>주문 코드</th>
-                                <th>판매자 ID</th>
-                                <th>정산 금액</th>
-                                <th>상태</th>
-                                <th>정산 시각</th>
-                                <th>생성 시각</th>
+                                <th className="cell-center">판매자 ID</th>
+                                <th className="cell-right">정산 금액</th>
+                                <th className="cell-center">상태</th>
+                                <th className="cell-center">정산 시각</th>
+                                <th className="cell-center">생성 시각</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -222,19 +246,28 @@ export default function AdminSettlementsPage() {
                                     <td>
                                         <Link
                                             to={`/admin/settlements/${settlement.id}`}
-                                            className="table-link"
+                                            className="table-link table-link--primary"
                                         >
                                             {settlement.settlementCode}
                                         </Link>
                                     </td>
-                                    <td>{settlement.orderCode}</td>
-                                    <td>{settlement.sellerId}</td>
-                                    <td>{formatPrice(settlement.settlementAmount)}</td>
                                     <td>
+                                        <span className="table-subtext">주문</span>
+                                        <div>{settlement.orderCode}</div>
+                                    </td>
+                                    <td className="cell-center">{settlement.sellerId}</td>
+                                    <td className="cell-right">
+                                        {formatPrice(settlement.settlementAmount)}
+                                    </td>
+                                    <td className="cell-center">
                                         <StatusBadge status={settlement.status} />
                                     </td>
-                                    <td>{formatDateTime(settlement.settledAt)}</td>
-                                    <td>{formatDateTime(settlement.createdAt)}</td>
+                                    <td className="cell-center">
+                                        {formatDateTime(settlement.settledAt)}
+                                    </td>
+                                    <td className="cell-center">
+                                        {formatDateTime(settlement.createdAt)}
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>

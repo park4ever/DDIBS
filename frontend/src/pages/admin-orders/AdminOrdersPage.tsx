@@ -99,80 +99,102 @@ export default function AdminOrdersPage() {
             />
 
             <div className="page-card">
-                <form className="filter-form" onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        placeholder="주문 코드"
-                        value={filters.orderCode}
-                        onChange={(event) =>
-                            setFilters((prev) => ({ ...prev, orderCode: event.target.value }))
-                        }
-                    />
-
-                    <select
-                        value={filters.status}
-                        onChange={(event) =>
-                            setFilters((prev) => ({ ...prev, status: event.target.value }))
-                        }
-                    >
-                        <option value="">전체 상태</option>
-                        <option value="CREATED">CREATED</option>
-                        <option value="CONFIRMED">CONFIRMED</option>
-                        <option value="PAYMENT_FAILED">PAYMENT_FAILED</option>
-                        <option value="HOLD_EXPIRED">HOLD_EXPIRED</option>
-                    </select>
-
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="판매자 ID"
-                        value={filters.sellerId}
-                        onChange={(event) =>
-                            setFilters((prev) => ({ ...prev, sellerId: event.target.value }))
-                        }
-                    />
-
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="회원 ID"
-                        value={filters.memberId}
-                        onChange={(event) =>
-                            setFilters((prev) => ({ ...prev, memberId: event.target.value }))
-                        }
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="회원 이메일"
-                        value={filters.memberEmailKeyword}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                memberEmailKeyword: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="상품명"
-                        value={filters.productNameKeyword}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                productNameKeyword: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <div className="filter-form__actions">
-                        <button type="submit">조회</button>
-                        <button type="button" className="secondary" onClick={handleReset}>
-                            초기화
-                        </button>
+                <div className="filter-panel">
+                    <div className="filter-panel__header">
+                        <h3 className="filter-panel__title">검색 조건</h3>
+                        <p className="filter-panel__description">
+                            주문 코드, 상태, 회원, 판매자, 상품 기준으로 운영 데이터를 탐색합니다.
+                        </p>
                     </div>
-                </form>
+
+                    <form className="filter-form" onSubmit={handleSubmit}>
+                        <label className="filter-field">
+                            <span className="filter-field__label">주문 코드</span>
+                            <input
+                                type="text"
+                                value={filters.orderCode}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({ ...prev, orderCode: event.target.value }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">주문 상태</span>
+                            <select
+                                value={filters.status}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({ ...prev, status: event.target.value }))
+                                }
+                            >
+                                <option value="">전체 상태</option>
+                                <option value="CREATED">CREATED</option>
+                                <option value="CONFIRMED">CONFIRMED</option>
+                                <option value="PAYMENT_FAILED">PAYMENT_FAILED</option>
+                                <option value="HOLD_EXPIRED">HOLD_EXPIRED</option>
+                            </select>
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">판매자 ID</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={filters.sellerId}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({ ...prev, sellerId: event.target.value }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">회원 ID</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={filters.memberId}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({ ...prev, memberId: event.target.value }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">회원 이메일</span>
+                            <input
+                                type="text"
+                                value={filters.memberEmailKeyword}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        memberEmailKeyword: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">상품명</span>
+                            <input
+                                type="text"
+                                value={filters.productNameKeyword}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        productNameKeyword: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <div className="filter-form__actions">
+                            <button type="submit">조회</button>
+                            <button type="button" className="secondary" onClick={handleReset}>
+                                초기화
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             {isLoading ? <LoadingBox /> : null}
@@ -194,13 +216,13 @@ export default function AdminOrdersPage() {
                             <tr>
                                 <th>주문 코드</th>
                                 <th>회원</th>
-                                <th>판매자 ID</th>
+                                <th className="cell-center">판매자 ID</th>
                                 <th>상품</th>
                                 <th>옵션</th>
-                                <th>수량</th>
-                                <th>총 금액</th>
-                                <th>상태</th>
-                                <th>생성 시각</th>
+                                <th className="cell-center">수량</th>
+                                <th className="cell-right">총 금액</th>
+                                <th className="cell-center">상태</th>
+                                <th className="cell-center">생성 시각</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -211,15 +233,19 @@ export default function AdminOrdersPage() {
                                         <div>{order.memberName}</div>
                                         <div className="table-subtext">{order.memberEmail}</div>
                                     </td>
-                                    <td>{order.sellerId}</td>
+                                    <td className="cell-center">{order.sellerId}</td>
                                     <td>{order.productName}</td>
                                     <td>{order.variantName}</td>
-                                    <td>{order.quantity}</td>
-                                    <td>{Number(order.totalPrice).toLocaleString()}원</td>
-                                    <td>
+                                    <td className="cell-center">{order.quantity}</td>
+                                    <td className="cell-right">
+                                        {Number(order.totalPrice).toLocaleString()}원
+                                    </td>
+                                    <td className="cell-center">
                                         <StatusBadge status={order.status} />
                                     </td>
-                                    <td>{new Date(order.createdAt).toLocaleString()}</td>
+                                    <td className="cell-center">
+                                        {new Date(order.createdAt).toLocaleString()}
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>

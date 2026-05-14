@@ -70,7 +70,7 @@ export default function AdminLaunchDetailPage() {
         <div className="page-section">
             <PageHeader
                 title="발매 상세"
-                description="발매 기본 정보와 옵션별 재고 현황을 확인합니다."
+                description="발매 기본 정보와 옵션별 재고 흐름을 운영 관점에서 확인합니다."
             />
 
             <div className="page-card">
@@ -133,38 +133,38 @@ export default function AdminLaunchDetailPage() {
             </div>
 
             <div className="page-card">
-                <PageHeader
-                    title="옵션별 재고 현황"
-                    description="옵션별 판매가, 총 재고, 가용 재고를 확인합니다."
-                />
+                <h3 className="detail-section-title">옵션별 재고 현황</h3>
+                <p className="detail-section-intro">
+                    옵션 단위로 판매가, 총 재고, 현재 가용 재고를 확인합니다.
+                </p>
 
                 {launchDetail.variants.length === 0 ? (
                     <EmptyState
                         title="발매 옵션이 없습니다."
-                        description="해당 발매에 연결된 발매 옵션이 없습니다."
+                        description="해당 발매에 연결된 옵션 정보가 없습니다."
                     />
                 ) : (
                     <div className="table-wrapper">
                         <table className="data-table">
                             <thead>
                             <tr>
-                                <th>발매 옵션 ID</th>
-                                <th>상품 옵션 ID</th>
+                                <th className="cell-center">발매 옵션 ID</th>
+                                <th className="cell-center">상품 옵션 ID</th>
                                 <th>옵션명</th>
-                                <th>판매가</th>
-                                <th>총 재고</th>
-                                <th>가용 재고</th>
+                                <th className="cell-right">판매가</th>
+                                <th className="cell-center">총 재고</th>
+                                <th className="cell-center">가용 재고</th>
                             </tr>
                             </thead>
                             <tbody>
                             {launchDetail.variants.map((variant) => (
                                 <tr key={variant.launchVariantId}>
-                                    <td>{variant.launchVariantId}</td>
-                                    <td>{variant.productVariantId}</td>
+                                    <td className="cell-center">{variant.launchVariantId}</td>
+                                    <td className="cell-center">{variant.productVariantId}</td>
                                     <td>{variant.variantName}</td>
-                                    <td>{formatPrice(variant.salePrice)}</td>
-                                    <td>{variant.totalStock}</td>
-                                    <td>{variant.availableStock}</td>
+                                    <td className="cell-right">{formatPrice(variant.salePrice)}</td>
+                                    <td className="cell-center">{variant.totalStock}</td>
+                                    <td className="cell-center">{variant.availableStock}</td>
                                 </tr>
                             ))}
                             </tbody>

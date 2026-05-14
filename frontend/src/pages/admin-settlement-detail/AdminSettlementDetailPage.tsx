@@ -70,7 +70,7 @@ export default function AdminSettlementDetailPage() {
         <div className="page-section">
             <PageHeader
                 title="정산 상세"
-                description="정산 기본 정보와 상태, 금액, 처리 시각을 확인합니다."
+                description="정산 상태와 금액, 처리 시각을 운영 관점에서 확인합니다."
             />
 
             <div className="page-card">
@@ -106,6 +106,9 @@ export default function AdminSettlementDetailPage() {
 
             <div className="page-card">
                 <h3 className="detail-section-title">기본 정보</h3>
+                <p className="detail-section-intro">
+                    정산 레코드와 주문 연결 정보, 판매자 식별 정보를 확인합니다.
+                </p>
 
                 <div className="detail-grid">
                     <div className="detail-item">
@@ -132,6 +135,9 @@ export default function AdminSettlementDetailPage() {
 
             <div className="page-card">
                 <h3 className="detail-section-title">처리 정보</h3>
+                <p className="detail-section-intro">
+                    정산 상태, 금액, 처리 시각과 생성/수정 시각을 확인합니다.
+                </p>
 
                 <div className="detail-grid">
                     <div className="detail-item">

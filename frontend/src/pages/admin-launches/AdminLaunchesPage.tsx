@@ -95,94 +95,118 @@ export default function AdminLaunchesPage() {
         <div className="page-section">
             <PageHeader
                 title="발매 / 재고 조회"
-                description="발매 상태와 LaunchVariant 재고 현황을 운영 관점에서 확인합니다."
+                description="발매 상태와 옵션별 재고 현황을 운영 관점에서 확인합니다."
             />
 
             <div className="page-card">
-                <form className="filter-form" onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        placeholder="발매 코드"
-                        value={filters.launchCode}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                launchCode: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <select
-                        value={filters.status}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                status: event.target.value,
-                            }))
-                        }
-                    >
-                        <option value="">전체 상태</option>
-                        <option value="UPCOMING">UPCOMING</option>
-                        <option value="OPEN">OPEN</option>
-                        <option value="CLOSED">CLOSED</option>
-                        <option value="ENDED">ENDED</option>
-                        <option value="CANCELLED">CANCELLED</option>
-                    </select>
-
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="판매자 ID"
-                        value={filters.sellerId}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                sellerId: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="상품명"
-                        value={filters.productNameKeyword}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                productNameKeyword: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="datetime-local"
-                        value={filters.from}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                from: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <input
-                        type="datetime-local"
-                        value={filters.to}
-                        onChange={(event) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                to: event.target.value,
-                            }))
-                        }
-                    />
-
-                    <div className="filter-form__actions">
-                        <button type="submit">조회</button>
-                        <button type="button" className="secondary" onClick={handleReset}>
-                            초기화
-                        </button>
+                <div className="filter-panel">
+                    <div className="filter-panel__header">
+                        <h3 className="filter-panel__title">검색 조건</h3>
+                        <p className="filter-panel__description">
+                            발매 코드, 상태, 판매자, 상품명, 기간 조건으로 발매와 재고 흐름을 조회합니다.
+                        </p>
                     </div>
-                </form>
+
+                    <form className="filter-form" onSubmit={handleSubmit}>
+                        <label className="filter-field">
+                            <span className="filter-field__label">발매 코드</span>
+                            <input
+                                type="text"
+                                value={filters.launchCode}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        launchCode: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">발매 상태</span>
+                            <select
+                                value={filters.status}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        status: event.target.value,
+                                    }))
+                                }
+                            >
+                                <option value="">전체 상태</option>
+                                <option value="UPCOMING">UPCOMING</option>
+                                <option value="OPEN">OPEN</option>
+                                <option value="CLOSED">CLOSED</option>
+                                <option value="ENDED">ENDED</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">판매자 ID</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={filters.sellerId}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        sellerId: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">상품명</span>
+                            <input
+                                type="text"
+                                value={filters.productNameKeyword}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        productNameKeyword: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">시작 시각</span>
+                            <input
+                                type="datetime-local"
+                                value={filters.from}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        from: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <label className="filter-field">
+                            <span className="filter-field__label">종료 시각</span>
+                            <input
+                                type="datetime-local"
+                                value={filters.to}
+                                onChange={(event) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        to: event.target.value,
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <div className="filter-form__actions">
+                            <button type="submit">조회</button>
+                            <button type="button" className="secondary" onClick={handleReset}>
+                                초기화
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             {isLoading ? <LoadingBox /> : null}
@@ -208,12 +232,12 @@ export default function AdminLaunchesPage() {
                                 <th>발매명</th>
                                 <th>판매자</th>
                                 <th>상품</th>
-                                <th>상태</th>
-                                <th>발매 시작</th>
-                                <th>발매 종료</th>
-                                <th>옵션 수</th>
-                                <th>총 재고</th>
-                                <th>가용 재고</th>
+                                <th className="cell-center">상태</th>
+                                <th className="cell-center">발매 시작</th>
+                                <th className="cell-center">발매 종료</th>
+                                <th className="cell-center">옵션 수</th>
+                                <th className="cell-center">총 재고</th>
+                                <th className="cell-center">가용 재고</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -222,32 +246,25 @@ export default function AdminLaunchesPage() {
                                     <td>
                                         <Link
                                             to={`/admin/launches/${launch.id}`}
-                                            className="table-link"
+                                            className="table-link table-link--primary"
                                         >
                                             {launch.launchCode}
                                         </Link>
                                     </td>
-                                    <td>
-                                        <Link
-                                            to={`/admin/launches/${launch.id}`}
-                                            className="table-link"
-                                        >
-                                            {launch.launchName}
-                                        </Link>
-                                    </td>
+                                    <td>{launch.launchName}</td>
                                     <td>
                                         <div>{launch.sellerName}</div>
                                         <div className="table-subtext">ID: {launch.sellerId}</div>
                                     </td>
                                     <td>{launch.productName}</td>
-                                    <td>
+                                    <td className="cell-center">
                                         <StatusBadge status={launch.status} />
                                     </td>
-                                    <td>{formatDateTime(launch.startAt)}</td>
-                                    <td>{formatDateTime(launch.endAt)}</td>
-                                    <td>{launch.variantCount}</td>
-                                    <td>{launch.totalStock}</td>
-                                    <td>{launch.availableStock}</td>
+                                    <td className="cell-center">{formatDateTime(launch.startAt)}</td>
+                                    <td className="cell-center">{formatDateTime(launch.endAt)}</td>
+                                    <td className="cell-center">{launch.variantCount}</td>
+                                    <td className="cell-center">{launch.totalStock}</td>
+                                    <td className="cell-center">{launch.availableStock}</td>
                                 </tr>
                             ))}
                             </tbody>
