@@ -16,7 +16,7 @@ DDIBS는 일반적인 상시 판매형 쇼핑몰이 아닙니다.
 - 결제 실패 또는 홀드 만료 시 자동 해제 및 재고 복구
 - 동시 주문 상황에서 과판매 방지
 - 확정 주문 기준 정산 생성
-- 관리자 관점의 주문 조회 및 운영 추적
+- 관리자 관점의 주문 / 정산 / 발매·재고 운영 조회
 
 즉, DDIBS의 핵심은 기능 수를 늘리는 것이 아니라  
 **정합성 · 동시성 제어 · 상태 전이 · 설명 가능한 설계**를 코드와 테스트로 증명하는 데 있습니다.
@@ -32,7 +32,7 @@ DDIBS는 일반적인 상시 판매형 쇼핑몰이 아닙니다.
 - 결제 전에 재고를 어떻게 임시 선점할 것인가?
 - 결제 실패 또는 결제 미완료 상태가 발생하면 재고를 어떻게 복구할 것인가?
 - 확정 주문을 기준으로 정산은 어떻게 분리해서 생성할 것인가?
-- 관리자 입장에서 주문/정산/배치 결과를 어떻게 추적할 것인가?
+- 관리자 입장에서 주문 / 정산 / 발매 / 배치 결과를 어떻게 추적할 것인가?
 
 DDIBS는 이 질문들에 답하기 위해 설계한 프로젝트입니다.
 
@@ -68,52 +68,36 @@ DDIBS는 이 질문들에 답하기 위해 설계한 프로젝트입니다.
 
 ## 현재 구현 범위
 
-### 1. Testcontainers 기반 MySQL 테스트 환경
-기존에는 로컬 MySQL 테스트 DB에 의존하던 통합 테스트를,  
-이제는 **Testcontainers + MySQL** 기반으로 실행하도록 정리했습니다.
+### 1. 핵심 백엔드 플로우
+- 발매 가능 여부 검증
+- 주문 생성 시 재고 홀드
+- 결제 성공 / 실패 처리
+- 홀드 만료 배치
+- 확정 주문 기준 정산 생성 배치
+- 동시 주문 과판매 방지
+- 결제 vs 홀드 만료 배치 경합 처리
 
-- 테스트 실행 시 컨테이너 기반 MySQL 자동 기동
-- Flyway 마이그레이션 기반 테스트 스키마 구성
-- `ddl-auto=create-drop` 대신 `Flyway + validate` 기반 검증
-- 로컬 테스트 환경 의존성 감소 및 재현성 강화
+### 2. 운영 조회 / API
+- 관리자 주문 조회
+- 관리자 정산 조회
+- 관리자 발매 / 재고 조회
+- 관리자 발매 상세 조회
+- 관리자 정산 상세 조회
 
-### 2. 정산 배치 멱등성 / 운영 로그 개선
-정산 배치는 단순히 Settlement를 생성하는 수준에서 끝나지 않고,  
-**후보 수 / 생성 수 / 경쟁 스킵 수**를 구조적으로 반환하도록 리팩토링했습니다.
+### 3. 프론트엔드 데모 레이어
+- 관리자 로그인 / 로그아웃
+- 보호 라우트
+- 주문 조회 화면
+- 정산 조회 화면
+- 발매 / 재고 조회 화면
+- 발매 상세 화면
+- 정산 상세 화면
 
-이를 통해
-
-- 중복 생성 방지
-- 예외 기반 최종 방어
-- 배치 실행 결과 설명 가능성
-
-을 더 명확히 했습니다.
-
-### 3. 홀드 만료 배치 결과 구조화
-홀드 만료 배치도 정산 배치와 마찬가지로 결과를 구조화했습니다.
-
-- 후보 수
-- 실제 만료 처리 수
-- 주문 상태 스킵 수
-- 홀드 상태 스킵 수
-
-를 구분해, 운영 로그와 테스트가 더 설명 가능해졌습니다.
-
-### 4. 관리자 주문 조회 API
-QueryDSL을 도입해 관리자 주문 조회 기능을 확장했습니다.
-
-지원하는 조회 조건:
-- 주문 코드
-- 주문 상태
-- 판매자 ID
-- 회원 ID
-- 회원 이메일 키워드
-- 상품명 키워드
-- 기간(from / to)
-- 페이징 / 정렬
-
-즉 DDIBS는 단순히 주문/결제/배치가 동작하는 백엔드를 넘어서,  
-**운영자가 실제로 추적 가능한 시스템**으로 보강되었습니다.
+### 4. 테스트 / 문서
+- Testcontainers 기반 MySQL 통합 테스트
+- 시연 스크립트 문서
+- 시퀀스 다이어그램 문서
+- 버전별 계획 / 최종 리뷰 문서
 
 ---
 
@@ -148,7 +132,7 @@ DDIBS에서 실제 주문과 재고 차감의 기준은 `LaunchVariant`입니다
 이렇게 분리해서 결제 플로우의 책임을 줄이고, 운영 자동화를 더 명확하게 표현했습니다.
 
 ### 4. 배치는 결과를 구조적으로 반환한다
-정산 생성 배치와 홀드 만료 배치는 단순히 처리 건수만 반환하지 않고,  
+정산 생성 배치와 홀드 만료 배치는 단순 처리 건수만 반환하지 않고,  
 **후보 / 성공 / 스킵**을 구분해서 반환합니다.
 
 이를 통해
@@ -158,7 +142,7 @@ DDIBS에서 실제 주문과 재고 차감의 기준은 `LaunchVariant`입니다
 
 을 함께 높였습니다.
 
-### 5. 동시성과 경합을 테스트로 검증했다
+### 5. 동시성과 경합을 테스트로 검증한다
 DDIBS는 단순 CRUD 테스트가 아니라, 실제로 문제가 될 수 있는 경합 시나리오를 통합 테스트로 검증합니다.
 
 - 재고 1건 상황 동시 주문
@@ -170,6 +154,7 @@ DDIBS는 단순 CRUD 테스트가 아니라, 실제로 문제가 될 수 있는 
 
 ## 기술 스택
 
+### Backend
 - **Java 21**
 - **Spring Boot 4.0.5**
 - **Spring MVC**
@@ -179,16 +164,22 @@ DDIBS는 단순 CRUD 테스트가 아니라, 실제로 문제가 될 수 있는 
 - **MySQL 8.4**
 - **Flyway**
 - **Actuator**
+- **Gradle**
+
+### Frontend Demo
+- **React**
+- **Vite**
+- **TypeScript**
+
+### Test
 - **JUnit 5**
 - **Testcontainers**
-- **Gradle**
 
 ---
 
 ## 도메인 모델
 
 ### 핵심 엔티티
-
 - `Member`
 - `Seller`
 - `Product`
@@ -201,7 +192,6 @@ DDIBS는 단순 CRUD 테스트가 아니라, 실제로 문제가 될 수 있는 
 - `Settlement`
 
 ### 관계 요약
-
 - Seller 1 : N Product
 - Product 1 : N ProductVariant
 - Product 1 : N Launch
@@ -233,7 +223,7 @@ DDIBS는 단순 CRUD 테스트가 아니라, 실제로 문제가 될 수 있는 
 ### HoldStatus
 - `ACTIVE`
 - `CONSUMED`
-- `CANCELLED`
+- `CANCELED`
 - `EXPIRED`
 
 ### PaymentStatus
@@ -252,15 +242,59 @@ DDIBS는 단순 CRUD 테스트가 아니라, 실제로 문제가 될 수 있는 
 ### 관리자 주문 조회
 `GET /api/admin/orders`
 
-지원 예시:
-
+예시:
 ```text
 /api/admin/orders?status=CONFIRMED&page=0&size=20
 /api/admin/orders?sellerId=1&memberEmailKeyword=test
 /api/admin/orders?productNameKeyword=Dunk&sort=createdAt,desc
 ```
 
-이 API는 QueryDSL 기반으로 동적 조건 검색 + 페이징 + 정렬을 지원합니다.
+### 관리자 정산 조회
+`GET /api/admin/settlements`
+
+예시:
+```text
+/api/admin/settlements?status=CREATED&page=0&size=20
+/api/admin/settlements?sellerId=1
+/api/admin/settlements?settlementCode=STL-LOCAL
+```
+
+### 관리자 발매 / 재고 조회
+`GET /api/admin/launches`
+
+예시:
+```text
+/api/admin/launches?status=OPEN&page=0&size=20
+/api/admin/launches?sellerId=1
+/api/admin/launches?productNameKeyword=Sneaker
+```
+
+### 관리자 상세 조회
+```text
+GET /api/admin/launches/{launchId}
+GET /api/admin/settlements/{settlementId}
+```
+
+이 조회 API들은 QueryDSL 기반으로 동적 조건 검색 + 페이징 + 정렬을 지원합니다.
+
+---
+
+## 관리자 프론트 데모
+
+DDIBS는 백엔드 프로젝트가 중심이지만,  
+운영 API를 실제로 시연할 수 있도록 **최소 관리자 데모 레이어**를 함께 구성했습니다.
+
+### 제공 화면
+- 로그인
+- 주문 조회
+- 정산 조회
+- 발매 / 재고 조회
+- 발매 상세
+- 정산 상세
+
+### 방향
+프론트 자체를 화려하게 확장하기보다,  
+**DDIBS 백엔드 운영 API를 직접 보여주기 위한 보조 수단**으로 구성했습니다.
 
 ---
 
@@ -301,6 +335,16 @@ DDIBS는 핵심 플로우와 운영 시나리오를 통합 테스트로 검증�
   - 페이징 / 정렬
   - 상태 / 판매자 / 회원 / 상품명 기준 조회
 
+- `AdminSettlementQueryServiceIntegrationTest`
+  - 관리자 정산 조회 검색 조건
+  - 페이징 / 정렬
+  - 상태 / 판매자 / 코드 기준 조회
+
+- `AdminLaunchQueryServiceIntegrationTest`
+  - 관리자 발매 / 재고 조회 검색 조건
+  - 발매 상세 조회
+  - 재고 집계 응답 검증
+
 ### 테스트 환경
 - 테스트는 **Testcontainers 기반 MySQL** 환경에서 실행됩니다.
 - 스키마는 **Flyway 마이그레이션**을 기준으로 구성됩니다.
@@ -328,7 +372,15 @@ export DDIBS_DB_PASSWORD=your_password
 ./gradlew bootRun
 ```
 
-### 4. 테스트 실행
+### 4. 프론트 데모 실행
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 5. 테스트 실행
 테스트는 Testcontainers 기반으로 실행되므로, **Docker Desktop 또는 Docker Engine이 실행 중이어야 합니다.**
 
 ```bash
@@ -355,6 +407,16 @@ src/main/java/io/github/park4ever/ddibs
 ├── productvariant
 ├── seller
 └── settlement
+
+frontend/src
+├── api
+├── components
+├── contexts
+├── layouts
+├── pages
+├── routes
+├── types
+└── utils
 ```
 
 ---
@@ -366,8 +428,14 @@ src/main/java/io/github/park4ever/ddibs
 - `docs/DDIBS_MASTER_BLUEPRINT_v1.1.md`
 - `docs/DDIBS_V1_FINAL_REVIEW.md`
 - `docs/DDIBS_V2_PLAN.md`
+- `docs/DDIBS_V2_FINAL_REVIEW.md`
+- `docs/DDIBS_V3_FINAL_REVIEW.md`
+- `docs/DDIBS_V4_PLAN.md`
+- `docs/DDIBS_V4_FINAL_REVIEW.md`
+- `docs/DDIBS_DEMO_SCRIPT.md`
+- `docs/DDIBS_SEQUENCE_DIAGRAMS.md`
 
-이 문서들은 DDIBS의 기준과 각 단계의 정리 내용을 담고 있습니다.
+이 문서들은 DDIBS의 기준, 버전별 구현 범위, 시연 흐름, 설계 판단을 담고 있습니다.
 
 ---
 
@@ -399,9 +467,9 @@ src/main/java/io/github/park4ever/ddibs
 결제 성공 요청과 홀드 만료 배치가 거의 동시에 실행될 수 있는 경합 시나리오를 별도 통합 테스트로 검증했습니다.  
 이를 통해 최종 상태가 **결제 성공 종결 상태** 또는 **홀드 만료 종결 상태** 중 하나로만 수렴하는지 확인했습니다.
 
-### 5. Testcontainers 도입 후 테스트 재현성 개선
-기존에는 로컬 테스트 DB 환경에 영향을 받을 수 있었지만,  
-Testcontainers + MySQL + Flyway 조합으로 테스트를 정리하면서 환경 재현성과 신뢰도를 높였습니다.
+### 5. 관리자 운영 조회를 QueryDSL로 구현한 이유
+관리자 조회는 조건 조합이 많고, 페이징 / 정렬 / 검색 조합이 중요합니다.  
+따라서 파생 메서드나 단순 `@Query`보다, **QueryDSL 기반 동적 조회**가 더 자연스럽고 확장 가능하다고 판단했습니다.
 
 ---
 
