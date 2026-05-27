@@ -29,7 +29,7 @@ public interface HoldReservationRepository extends JpaRepository<HoldReservation
             select h.order.id
             from HoldReservation h
             where h.status = :status
-                and h.expiresAt < :expiresAt
+                and h.expiresAt <= :expiresAt
             order by h.expiresAt asc
             """)
     List<Long> findExpiredOrderIds(HoldStatus status, LocalDateTime expiresAt);

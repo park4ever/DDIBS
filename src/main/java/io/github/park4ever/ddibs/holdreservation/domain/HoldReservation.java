@@ -97,7 +97,7 @@ public class HoldReservation extends BaseTimeEntity {
     public boolean isExpiredAt(LocalDateTime currentTime) {
         return this.status == HoldStatus.ACTIVE
                 && currentTime != null
-                && currentTime.isAfter(this.expiresAt);
+                && !currentTime.isBefore(this.expiresAt);
     }
 
     private void validateOrder(Order order) {

@@ -26,7 +26,6 @@ import io.github.park4ever.ddibs.productvariant.repository.ProductVariantReposit
 import io.github.park4ever.ddibs.seller.domain.Seller;
 import io.github.park4ever.ddibs.seller.repository.SellerRepository;
 import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +33,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
@@ -78,24 +79,26 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
     @Test
     @DisplayName("만료된 ACTIVE 홀드는 EXPIRED 처리되고, 주문 만료 및 재고 복구가 수행된다.")
     void expireHolds_success() {
-        //given
+        // given
         PendingOrderFixture fixture = createPendingOrderFixture(10);
+        LocalDateTime fixedNow = LocalDateTime.of(2026, 5, 20, 12, 0, 0);
+        useFixedClock(fixedNow);
 
-        expireHoldNow(fixture.order.getId());
+        expireHoldAt(fixture.order().getId(), fixedNow.minusMinutes(1));
 
-        //when
+        // when
         HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
 
-        //then
-        HoldReservation expireHold = holdReservationRepository.findByOrderId(fixture.order.getId()).orElseThrow();
-        Order expiredOrder = orderRepository.findById(fixture.order.getId()).orElseThrow();
-        LaunchVariant restoredLaunchVariant = launchVariantRepository.findById(fixture.launchVariant.getId()).orElseThrow();
+        // then
+        HoldReservation expiredHold = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
+        Order expiredOrder = orderRepository.findById(fixture.order().getId()).orElseThrow();
+        LaunchVariant restoredLaunchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
 
         assertThat(result.candidateCount()).isEqualTo(1);
         assertThat(result.expiredCount()).isEqualTo(1);
         assertThat(result.orderStateSkippedCount()).isEqualTo(0);
         assertThat(result.holdStateSkippedCount()).isEqualTo(0);
-        assertThat(expireHold.getStatus()).isEqualTo(HoldStatus.EXPIRED);
+        assertThat(expiredHold.getStatus()).isEqualTo(HoldStatus.EXPIRED);
         assertThat(expiredOrder.getStatus()).isEqualTo(OrderStatus.HOLD_EXPIRED);
         assertThat(restoredLaunchVariant.getAvailableStock()).isEqualTo(10);
     }
@@ -103,15 +106,17 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
     @Test
     @DisplayName("ACTIVE가 아닌 홀드는 만료 배치 대상이 아니다.")
     void expireHolds_skipWhenHoldIsNotActive() {
-        //given
+        // given
         ConfirmedOrderFixture fixture = createConfirmedOrderFixture(10);
+        LocalDateTime fixedNow = LocalDateTime.of(2026, 5, 20, 12, 0, 0);
+        useFixedClock(fixedNow);
 
-        expireHoldNow(fixture.order.getId());
+        expireHoldAt(fixture.order().getId(), fixedNow.minusMinutes(1));
 
-        //when
+        // when
         HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
 
-        //then
+        // then
         HoldReservation unchangedHold = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
         Order unchangedOrder = orderRepository.findById(fixture.order().getId()).orElseThrow();
         LaunchVariant launchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
@@ -130,6 +135,10 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
     void expireHolds_skipWhenHoldIsNotExpiredYet() {
         // given
         PendingOrderFixture fixture = createPendingOrderFixture(10);
+        LocalDateTime fixedNow = LocalDateTime.of(2026, 5, 20, 12, 0, 0);
+        useFixedClock(fixedNow);
+
+        expireHoldAt(fixture.order().getId(), fixedNow.plusMinutes(1));
 
         // when
         HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
@@ -148,10 +157,45 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         assertThat(launchVariant.getAvailableStock()).isEqualTo(9);
     }
 
-    private void expireHoldNow(Long orderId) {
+    @Test
+    @DisplayName("expiresAt과 현재 시각이 같으면 ACTIVE 홀드는 만료 배치 대상이다.")
+    void expireHolds_whenNowEqualsExpiresAt() {
+        // given
+        PendingOrderFixture fixture = createPendingOrderFixture(10);
+        LocalDateTime fixedNow = LocalDateTime.of(2026, 5, 20, 12, 0, 0);
+        useFixedClock(fixedNow);
+
+        expireHoldAt(fixture.order().getId(), fixedNow);
+
+        // when
+        HoldExpirationBatchResult result = holdExpirationBatchService.expireHolds();
+
+        // then
+        HoldReservation expiredHold = holdReservationRepository.findByOrderId(fixture.order().getId()).orElseThrow();
+        Order expiredOrder = orderRepository.findById(fixture.order().getId()).orElseThrow();
+        LaunchVariant restoredLaunchVariant = launchVariantRepository.findById(fixture.launchVariant().getId()).orElseThrow();
+
+        assertThat(result.candidateCount()).isEqualTo(1);
+        assertThat(result.expiredCount()).isEqualTo(1);
+        assertThat(result.orderStateSkippedCount()).isEqualTo(0);
+        assertThat(result.holdStateSkippedCount()).isEqualTo(0);
+        assertThat(expiredHold.getStatus()).isEqualTo(HoldStatus.EXPIRED);
+        assertThat(expiredOrder.getStatus()).isEqualTo(OrderStatus.HOLD_EXPIRED);
+        assertThat(restoredLaunchVariant.getAvailableStock()).isEqualTo(10);
+    }
+
+    private void expireHoldAt(Long orderId, LocalDateTime expiresAt) {
         HoldReservation holdReservation = holdReservationRepository.findByOrderId(orderId).orElseThrow();
-        ReflectionTestUtils.setField(holdReservation, "expiresAt", LocalDateTime.now().minusMinutes(1));
+        ReflectionTestUtils.setField(holdReservation, "expiresAt", expiresAt);
         holdReservationRepository.flush();
+    }
+
+    private void useFixedClock(LocalDateTime fixedNow) {
+        Clock fixedClock = Clock.fixed(
+                fixedNow.atZone(ZoneId.systemDefault()).toInstant(),
+                ZoneId.systemDefault()
+        );
+        ReflectionTestUtils.setField(holdExpirationBatchService, "clock", fixedClock);
     }
 
     private PendingOrderFixture createPendingOrderFixture(int totalStock) {

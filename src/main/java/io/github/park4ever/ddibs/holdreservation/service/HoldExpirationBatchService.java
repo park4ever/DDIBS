@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,10 +26,11 @@ public class HoldExpirationBatchService {
     private final HoldReservationRepository holdReservationRepository;
     private final LaunchVariantRepository launchVariantRepository;
     private final OrderRepository orderRepository;
+    private final Clock clock;
 
     @Transactional
     public HoldExpirationBatchResult expireHolds() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
 
         List<Long> expiredOrderIds = holdReservationRepository.findExpiredOrderIds(HoldStatus.ACTIVE, now);
 
