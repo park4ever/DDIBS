@@ -30,7 +30,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -40,7 +39,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Transactional
 public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
 
     @Autowired
@@ -187,7 +185,7 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
     private void expireHoldAt(Long orderId, LocalDateTime expiresAt) {
         HoldReservation holdReservation = holdReservationRepository.findByOrderId(orderId).orElseThrow();
         ReflectionTestUtils.setField(holdReservation, "expiresAt", expiresAt);
-        holdReservationRepository.flush();
+        holdReservationRepository.saveAndFlush(holdReservation);
     }
 
     private void useFixedClock(LocalDateTime fixedNow) {

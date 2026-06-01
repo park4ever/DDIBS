@@ -40,7 +40,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, OrderReposi
     Optional<Order> findByIdForUpdate(Long orderId);
 
     @Query("""
-            select o
+            select o.id
             from Order o
             where o.status = :status
                 and not exists (
@@ -50,5 +50,5 @@ public interface OrderRepository extends JpaRepository<Order, Long>, OrderReposi
                 )
             order by o.id asc
             """)
-    List<Order> findSettlementCandidates(OrderStatus status);
+    List<Long> findSettlementCandidateOrderIds(OrderStatus status);
 }
