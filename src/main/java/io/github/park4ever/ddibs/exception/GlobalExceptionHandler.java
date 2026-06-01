@@ -2,6 +2,7 @@ package io.github.park4ever.ddibs.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -15,6 +16,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,6 +26,13 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         ErrorCode errorCode = exception.getErrorCode();
+
+        log.warn(
+                "BusinessException occurred. code={}, message={}, path={}",
+                errorCode.name(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
 
         return ResponseEntity
                 .status(errorCode.getStatus())
@@ -41,6 +50,12 @@ public class GlobalExceptionHandler {
                 .map(this::toValidationError)
                 .toList();
 
+        log.warn(
+                "MethodArgumentNotValidException occurred. path={}, errors={}",
+                request.getRequestURI(),
+                errors
+        );
+
         return ResponseEntity
                 .status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
                 .body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI(), errors));
@@ -57,6 +72,12 @@ public class GlobalExceptionHandler {
                 .map(this::toValidationError)
                 .toList();
 
+        log.warn(
+                "BusinessException occurred. path={}, errors={}",
+                request.getRequestURI(),
+                errors
+        );
+
         return ResponseEntity
                 .status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
                 .body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI(), errors));
@@ -68,6 +89,12 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         String message = exception.getMessage();
+
+        log.warn(
+                "ConstraintViolationException occurred. path={}, message={}",
+                request.getRequestURI(),
+                message
+        );
 
         return ResponseEntity
                 .status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
@@ -85,6 +112,13 @@ public class GlobalExceptionHandler {
                 exception.getValue()
         );
 
+        log.warn(
+                "MethodArgumentTypeMismatchException occurred. path={}, parameter={}, value={}",
+                request.getRequestURI(),
+                exception.getName(),
+                exception.getValue()
+        );
+
         return ResponseEntity
                 .status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
                 .body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, message, request.getRequestURI()));
@@ -95,6 +129,13 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException exception,
             HttpServletRequest request
     ) {
+        log.warn(
+                "HttpRequestMethodNotSupportedException occurred. path={}, method={}, supportedMethods={}",
+                request.getRequestURI(),
+                exception.getMethod(),
+                exception.getSupportedMethods()
+        );
+
         return ResponseEntity
                 .status(ErrorCode.METHOD_NOT_ALLOWED.getStatus())
                 .body(ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED, request.getRequestURI()));
@@ -105,6 +146,12 @@ public class GlobalExceptionHandler {
             AuthenticationException exception,
             HttpServletRequest request
     ) {
+        log.warn(
+                "AuthenticationException occurred. path={}, message={}",
+                request.getRequestURI(),
+                exception.getMessage()
+        );
+
         return ResponseEntity
                 .status(ErrorCode.UNAUTHORIZED.getStatus())
                 .body(ErrorResponse.of(ErrorCode.UNAUTHORIZED, request.getRequestURI()));
@@ -115,6 +162,12 @@ public class GlobalExceptionHandler {
             AccessDeniedException exception,
             HttpServletRequest request
     ) {
+        log.warn(
+                "AccessDeniedException occurred. path={}, message={}",
+                request.getRequestURI(),
+                exception.getMessage()
+        );
+
         return ResponseEntity
                 .status(ErrorCode.ACCESS_DENIED.getStatus())
                 .body(ErrorResponse.of(ErrorCode.ACCESS_DENIED, request.getRequestURI()));
@@ -125,6 +178,14 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
+        log.error(
+                "Unhandled exception occurred. path={}, exceptionType={}, message={}",
+                request.getRequestURI(),
+                exception.getClass().getSimpleName(),
+                exception.getMessage(),
+                exception
+        );
+        
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus())
                 .body(ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, request.getRequestURI()));
