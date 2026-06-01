@@ -27,14 +27,22 @@ import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 
 class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
+
+    @MockitoSpyBean
+    private SettlementItemProcessor settlementItemProcessor;
 
     @Autowired
     private SettlementBatchService settlementBatchService;
@@ -130,6 +138,47 @@ class SettlementBatchServiceIntegrationTest extends MySqlContainerIntegrationTes
         assertThat(result.createdCount()).isEqualTo(0);
         assertThat(result.raceSkippedCount()).isEqualTo(0);
         assertThat(settlementRepository.findByOrderId(fixture.order().getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("정산 생성 배치가 중간 실패 후, 재실행되면 남은 건만 다시 처리된다.")
+    void generateSettlements_resumeAfterPartialFailure() {
+        // given
+        ConfirmedOrderFixture firstFixture = createConfirmedOrderFixture();
+        ConfirmedOrderFixture secondFixture = createConfirmedOrderFixture();
+
+        AtomicBoolean failOnce = new AtomicBoolean(true);
+
+        doAnswer(invocation -> {
+            Long orderId = invocation.getArgument(0);
+
+            if (orderId.equals(secondFixture.order().getId()) && failOnce.getAndSet(false)) {
+                throw new RuntimeException("forced settlement failure for retry test");
+            }
+
+            return invocation.callRealMethod();
+        }).when(settlementItemProcessor).create(anyLong());
+
+        // when & then - 1차 실행
+        assertThatThrownBy(() -> settlementBatchService.generateSettlements())
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("forced settlement failure for retry test");
+
+        assertThat(settlementRepository.findByOrderId(firstFixture.order().getId())).isPresent();
+        assertThat(settlementRepository.findByOrderId(secondFixture.order().getId())).isEmpty();
+        assertThat(settlementRepository.count()).isEqualTo(1);
+
+        // when - 2차 재실행
+        SettlementBatchResult rerunResult = settlementBatchService.generateSettlements();
+
+        // then
+        assertThat(rerunResult.candidateCount()).isEqualTo(1);
+        assertThat(rerunResult.createdCount()).isEqualTo(1);
+        assertThat(rerunResult.raceSkippedCount()).isEqualTo(0);
+
+        assertThat(settlementRepository.findByOrderId(firstFixture.order().getId())).isPresent();
+        assertThat(settlementRepository.findByOrderId(secondFixture.order().getId())).isPresent();
+        assertThat(settlementRepository.count()).isEqualTo(2);
     }
 
     private ConfirmedOrderFixture createConfirmedOrderFixture() {

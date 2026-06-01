@@ -29,6 +29,7 @@ import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -36,10 +37,18 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 
 public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
+
+    @MockitoSpyBean
+    private HoldExpirationItemProcessor holdExpirationItemProcessor;
 
     @Autowired
     private HoldExpirationBatchService holdExpirationBatchService;
@@ -180,6 +189,70 @@ public class HoldExpirationBatchServiceIntegrationTest extends MySqlContainerInt
         assertThat(expiredHold.getStatus()).isEqualTo(HoldStatus.EXPIRED);
         assertThat(expiredOrder.getStatus()).isEqualTo(OrderStatus.HOLD_EXPIRED);
         assertThat(restoredLaunchVariant.getAvailableStock()).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("홀드 만료 배치가 중간 실패 후, 재실행되면 남은 건만 다시 처리된다.")
+    void expireHolds_resumeAfterPartialFailure() {
+        // given
+        PendingOrderFixture firstFixture = createPendingOrderFixture(10);
+        PendingOrderFixture secondFixture = createPendingOrderFixture(10);
+
+        LocalDateTime fixedNow = LocalDateTime.of(2026, 5, 20, 12, 0, 0);
+        useFixedClock(fixedNow);
+
+        expireHoldAt(firstFixture.order().getId(), fixedNow.minusMinutes(2));
+        expireHoldAt(secondFixture.order().getId(), fixedNow.minusMinutes(1));
+
+        AtomicBoolean failOnce = new AtomicBoolean(true);
+
+        doAnswer(invocation -> {
+            Long orderId = invocation.getArgument(0);
+
+            if (orderId.equals(secondFixture.order().getId()) && failOnce.getAndSet(false)) {
+                throw new RuntimeException("forced failure for retry test");
+            }
+
+            return invocation.callRealMethod();
+        }).when(holdExpirationItemProcessor).expire(anyLong(), any(LocalDateTime.class));
+
+        // when & then - 1차 실행
+        assertThatThrownBy(() -> holdExpirationBatchService.expireHolds())
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("forced failure for retry test");
+
+        HoldReservation firstHoldAfterFailure = holdReservationRepository.findByOrderId(firstFixture.order().getId()).orElseThrow();
+        Order firstOrderAfterFailure = orderRepository.findById(firstFixture.order().getId()).orElseThrow();
+        LaunchVariant firstLaunchVariantAfterFailure = launchVariantRepository.findById(firstFixture.launchVariant().getId()).orElseThrow();
+
+        HoldReservation secondHoldAfterFailure = holdReservationRepository.findByOrderId(secondFixture.order().getId()).orElseThrow();
+        Order secondOrderAfterFailure = orderRepository.findById(secondFixture.order().getId()).orElseThrow();
+        LaunchVariant secondLaunchVariantAfterFailure = launchVariantRepository.findById(secondFixture.launchVariant().getId()).orElseThrow();
+
+        assertThat(firstHoldAfterFailure.getStatus()).isEqualTo(HoldStatus.EXPIRED);
+        assertThat(firstOrderAfterFailure.getStatus()).isEqualTo(OrderStatus.HOLD_EXPIRED);
+        assertThat(firstLaunchVariantAfterFailure.getAvailableStock()).isEqualTo(10);
+
+        assertThat(secondHoldAfterFailure.getStatus()).isEqualTo(HoldStatus.ACTIVE);
+        assertThat(secondOrderAfterFailure.getStatus()).isEqualTo(OrderStatus.CREATED);
+        assertThat(secondLaunchVariantAfterFailure.getAvailableStock()).isEqualTo(9);
+
+        // when - 2차 재실행
+        HoldExpirationBatchResult rerunResult = holdExpirationBatchService.expireHolds();
+
+        // then
+        HoldReservation secondHoldAfterRerun = holdReservationRepository.findByOrderId(secondFixture.order().getId()).orElseThrow();
+        Order secondOrderAfterRerun = orderRepository.findById(secondFixture.order().getId()).orElseThrow();
+        LaunchVariant secondLaunchVariantAfterRerun = launchVariantRepository.findById(secondFixture.launchVariant().getId()).orElseThrow();
+
+        assertThat(rerunResult.candidateCount()).isEqualTo(1);
+        assertThat(rerunResult.expiredCount()).isEqualTo(1);
+        assertThat(rerunResult.orderStateSkippedCount()).isEqualTo(0);
+        assertThat(rerunResult.holdStateSkippedCount()).isEqualTo(0);
+
+        assertThat(secondHoldAfterRerun.getStatus()).isEqualTo(HoldStatus.EXPIRED);
+        assertThat(secondOrderAfterRerun.getStatus()).isEqualTo(OrderStatus.HOLD_EXPIRED);
+        assertThat(secondLaunchVariantAfterRerun.getAvailableStock()).isEqualTo(10);
     }
 
     private void expireHoldAt(Long orderId, LocalDateTime expiresAt) {
