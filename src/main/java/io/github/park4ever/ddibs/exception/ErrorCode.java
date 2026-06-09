@@ -27,11 +27,11 @@ public enum ErrorCode {
     PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_VARIANT_001", "상품 Variant를 찾을 수 없습니다."),
     PRODUCT_VARIANT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PRODUCT_VARIANT_002", "상품 Variant 코드 생성에 실패했습니다."),
     DUPLICATE_PRODUCT_VARIANT_NAME(HttpStatus.CONFLICT, "PRODUCT_VARIANT_003", "같은 상품에 동일한 Variant명이 이미 존재합니다."),
+    PRODUCT_VARIANT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_VARIANT_004", "비활성 상품 Variant는 발매에 등록할 수 없습니다."),
     PRODUCT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_003", "비활성 상품에는 Variant를 생성할 수 없습니다."),
 
     INVALID_LAUNCH_PERIOD(HttpStatus.BAD_REQUEST, "LAUNCH_001", "발매 시작 시간은 종료 시간보다 빨라야 합니다."),
     INVALID_LAUNCH_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "LAUNCH_002", "허용되지 않는 발매 상태 전이입니다."),
-
     LAUNCH_NOT_FOUND(HttpStatus.NOT_FOUND, "LAUNCH_003", "발매를 찾을 수 없습니다."),
     LAUNCH_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LAUNCH_004", "발매 코드 생성에 실패했습니다."),
 
@@ -40,13 +40,11 @@ public enum ErrorCode {
     INVALID_LAUNCH_VARIANT_STOCK(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_003", "발매 재고 정보가 올바르지 않습니다."),
     INSUFFICIENT_LAUNCH_VARIANT_STOCK(HttpStatus.CONFLICT, "LAUNCH_VARIANT_004", "가용 재고가 부족합니다."),
     INVALID_LAUNCH_VARIANT_STOCK_RESTORE(HttpStatus.CONFLICT, "LAUNCH_VARIANT_005", "가용 재고 복구 값이 총 재고를 초과할 수 없습니다."),
-    INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_001", "주문 수량은 1 이상이어야 합니다."),
-
-    LAUNCH_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_VARIANT_001", "발매 Variant를 찾을 수 없습니다."),
-    PRODUCT_VARIANT_INACTIVE(HttpStatus.BAD_REQUEST, "PRODUCT_VARIANT_004", "비활성 상품 Variant는 발매에 등록할 수 없습니다."),
     DUPLICATE_LAUNCH_VARIANT(HttpStatus.CONFLICT, "LAUNCH_VARIANT_006", "같은 발매에 동일한 상품 Variant가 이미 등록되어 있습니다."),
     LAUNCH_VARIANT_REGISTRATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "LAUNCH_VARIANT_007", "현재 발매 상태에서는 상품 Variant를 등록할 수 없습니다."),
+    LAUNCH_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "LAUNCH_VARIANT_008", "발매 Variant를 찾을 수 없습니다."),
 
+    INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_001", "주문 수량은 1 이상이어야 합니다."),
     INVALID_ORDER_MEMBER(HttpStatus.BAD_REQUEST, "ORDER_002", "주문 회원 정보가 올바르지 않습니다."),
     INVALID_ORDER_SELLER(HttpStatus.BAD_REQUEST, "ORDER_003", "주문 판매자 정보가 올바르지 않습니다."),
     INVALID_ORDER_LAUNCH_VARIANT(HttpStatus.BAD_REQUEST, "ORDER_004", "주문 발매 Variant 정보가 올바르지 않습니다."),
@@ -54,7 +52,6 @@ public enum ErrorCode {
     INVALID_ORDER_SNAPSHOT(HttpStatus.BAD_REQUEST, "ORDER_006", "주문 스냅샷 정보가 올바르지 않습니다."),
     INVALID_ORDER_UNIT_PRICE(HttpStatus.BAD_REQUEST, "ORDER_007", "주문 단가는 0 이상이어야 합니다."),
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "ORDER_008", "허용되지 않는 주문 상태 전이입니다."),
-
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_009", "주문을 찾을 수 없습니다."),
     ORDER_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ORDER_010", "주문 코드 생성에 실패했습니다."),
     ORDER_CREATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "ORDER_011", "현재 상태에서는 주문을 생성할 수 없습니다."),
@@ -64,6 +61,7 @@ public enum ErrorCode {
     INVALID_HOLD_QUANTITY(HttpStatus.BAD_REQUEST, "HOLD_003", "홀드 수량은 1 이상이어야 합니다."),
     INVALID_HOLD_EXPIRES_AT(HttpStatus.BAD_REQUEST, "HOLD_004", "홀드 만료 시각이 올바르지 않습니다."),
     INVALID_HOLD_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "HOLD_005", "허용되지 않는 홀드 상태 전이입니다."),
+    HOLD_NOT_FOUND(HttpStatus.NOT_FOUND, "HOLD_006", "홀드 정보를 찾을 수 없습니다."),
 
     INVALID_PAYMENT_ORDER(HttpStatus.BAD_REQUEST, "PAYMENT_001", "결제 주문 정보가 올바르지 않습니다."),
     INVALID_PAYMENT_ORDER_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_002", "현재 주문 상태에서는 결제를 생성할 수 없습니다."),
@@ -74,11 +72,9 @@ public enum ErrorCode {
     INVALID_PAYMENT_FAILED_AT(HttpStatus.BAD_REQUEST, "PAYMENT_007", "결제 실패 시각이 올바르지 않습니다."),
     INVALID_PAYMENT_FAILURE_REASON(HttpStatus.BAD_REQUEST, "PAYMENT_008", "결제 실패 사유가 올바르지 않습니다."),
     INVALID_PAYMENT_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "PAYMENT_009", "허용되지 않는 결제 상태 전이입니다."),
-
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_010", "결제 정보를 찾을 수 없습니다."),
     PAYMENT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_011", "결제 코드 생성에 실패했습니다."),
     PAYMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PAYMENT_012", "이미 결제 요청이 존재하는 주문입니다."),
-    HOLD_NOT_FOUND(HttpStatus.NOT_FOUND, "HOLD_006", "홀드 정보를 찾을 수 없습니다."),
 
     INVALID_SETTLEMENT_ORDER(HttpStatus.BAD_REQUEST, "SETTLEMENT_001", "정산 주문 정보가 올바르지 않습니다."),
     INVALID_SETTLEMENT_ORDER_STATUS(HttpStatus.BAD_REQUEST, "SETTLEMENT_002", "확정된 주문만 정산을 생성할 수 있습니다."),
@@ -87,14 +83,12 @@ public enum ErrorCode {
     INVALID_SETTLEMENT_AMOUNT(HttpStatus.BAD_REQUEST, "SETTLEMENT_005", "정산 금액은 0 이상이어야 합니다."),
     INVALID_SETTLEMENT_CONFIRMED_AT(HttpStatus.BAD_REQUEST, "SETTLEMENT_006", "정산 확정 시각이 올바르지 않습니다."),
     INVALID_SETTLEMENT_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "SETTLEMENT_007", "허용되지 않는 정산 상태 전이입니다."),
-
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "SETTLEMENT_008", "정산 정보를 찾을 수 없습니다."),
-
     SETTLEMENT_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SETTLEMENT_009", "정산 코드 생성에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;
-    private final  String message;
+    private final String message;
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;

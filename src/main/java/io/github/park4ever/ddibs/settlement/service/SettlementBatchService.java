@@ -4,10 +4,12 @@ import io.github.park4ever.ddibs.order.domain.OrderStatus;
 import io.github.park4ever.ddibs.order.repository.OrderRepository;
 import io.github.park4ever.ddibs.settlement.batch.SettlementBatchResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SettlementBatchService {
@@ -22,7 +24,19 @@ public class SettlementBatchService {
         int raceSkippedCount = 0;
 
         for (Long orderId : candidateOrderIds) {
-            boolean created = settlementItemProcessor.create(orderId);
+            boolean created;
+
+            try {
+                created = settlementItemProcessor.create(orderId);
+            } catch (RuntimeException exception) {
+                log.error(
+                        "Settlement item processing failed. orderId={}, message={}",
+                        orderId,
+                        exception.getMessage(),
+                        exception
+                );
+                throw exception;
+            }
 
             if (created) {
                 createdCount++;

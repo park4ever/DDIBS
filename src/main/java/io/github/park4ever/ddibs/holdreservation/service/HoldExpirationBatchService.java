@@ -4,12 +4,14 @@ import io.github.park4ever.ddibs.holdreservation.batch.HoldExpirationBatchResult
 import io.github.park4ever.ddibs.holdreservation.domain.HoldStatus;
 import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HoldExpirationBatchService {
@@ -28,7 +30,20 @@ public class HoldExpirationBatchService {
         int holdStateSkipped = 0;
 
         for (Long orderId : expiredOrderIds) {
-            HoldExpirationProcessingResult result = holdExpirationItemProcessor.expire(orderId, now);
+            HoldExpirationProcessingResult result;
+
+            try {
+                result = holdExpirationItemProcessor.expire(orderId, now);
+            } catch (RuntimeException exception) {
+                log.error(
+                        "Hold expiration item processing failed. orderId={}, 기준시각={}, message={}",
+                        orderId,
+                        now,
+                        exception.getMessage(),
+                        exception
+                );
+                throw exception;
+            }
 
             switch (result) {
                 case EXPIRED -> expiredCount++;
