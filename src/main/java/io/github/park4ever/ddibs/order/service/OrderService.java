@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,6 +40,7 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final LaunchVariantRepository launchVariantRepository;
     private final HoldReservationRepository holdReservationRepository;
+    private final Clock clock;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -47,9 +49,8 @@ public class OrderService {
         Member member = findMemberById(memberId);
         LaunchVariant launchVariant = findLaunchVariantForUpdate(request.launchVariantId());
 
-        validateLaunchVariantOrderable(launchVariant);
-
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
+        validateLaunchVariantOrderable(launchVariant, now);
         LocalDateTime expiresAt = now.plusMinutes(HOLD_TTL_MINUTES);
 
         for (int attempt = 0; attempt < MAX_ORDER_CODE_RETRY_COUNT; attempt++) {
@@ -113,9 +114,7 @@ public class OrderService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.LAUNCH_VARIANT_NOT_FOUND));
     }
 
-    private void validateLaunchVariantOrderable(LaunchVariant launchVariant) {
-        LocalDateTime now = LocalDateTime.now();
-
+    private void validateLaunchVariantOrderable(LaunchVariant launchVariant, LocalDateTime now) {
         if (!launchVariant.getLaunch().isOrderableAt(now)) {
             throw new BusinessException(ErrorCode.ORDER_CREATION_NOT_ALLOWED);
         }

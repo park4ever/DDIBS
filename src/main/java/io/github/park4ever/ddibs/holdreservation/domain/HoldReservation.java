@@ -119,7 +119,7 @@ public class HoldReservation extends BaseTimeEntity {
     }
 
     private void validateExpiresAt(LocalDateTime expiresAt) {
-        if (expiresAt == null || !expiresAt.isAfter(LocalDateTime.now())) {
+        if (expiresAt == null) {
             throw new BusinessException(ErrorCode.INVALID_HOLD_EXPIRES_AT);
         }
     }

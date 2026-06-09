@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Service
@@ -36,12 +37,13 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final HoldReservationRepository holdReservationRepository;
     private final LaunchVariantRepository launchVariantRepository;
+    private final Clock clock;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional
     public RequestPaymentResponse requestPayment(Long memberId, RequestPaymentRequest request) {
-        LocalDateTime requestedAt = LocalDateTime.now();
+        LocalDateTime requestedAt = LocalDateTime.now(clock);
 
         Order order = findMyOrderForUpdate(memberId, request.orderId());
 
