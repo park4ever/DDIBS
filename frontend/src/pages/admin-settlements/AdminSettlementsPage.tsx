@@ -43,31 +43,48 @@ export default function AdminSettlementsPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        void fetchSettlements();
-    }, [searchCondition, page]);
+        let cancelled = false;
 
-    async function fetchSettlements() {
-        setIsLoading(true);
-        setErrorMessage("");
+        async function loadSettlements() {
+            setIsLoading(true);
+            setErrorMessage("");
 
-        try {
-            const response = await getAdminSettlements(
-                searchCondition,
-                page,
-                PAGE_SIZE,
-            );
-            setSettlements(response.content);
-            setTotalPages(response.totalPages);
-        } catch (error) {
-            if (error instanceof ApiError) {
-                setErrorMessage(error.message);
-            } else {
-                setErrorMessage("정산 목록을 불러오는 중 오류가 발생했습니다.");
+            try {
+                const response = await getAdminSettlements(
+                    searchCondition,
+                    page,
+                    PAGE_SIZE,
+                );
+
+                if (cancelled) {
+                    return;
+                }
+
+                setSettlements(response.content);
+                setTotalPages(response.totalPages);
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                if (error instanceof ApiError) {
+                    setErrorMessage(error.message);
+                } else {
+                    setErrorMessage("정산 목록을 불러오는 중 오류가 발생했습니다.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
-        } finally {
-            setIsLoading(false);
         }
-    }
+
+        void loadSettlements();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [searchCondition, page]);
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();

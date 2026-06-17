@@ -1,5 +1,6 @@
 package io.github.park4ever.ddibs.settlement.service;
 
+import io.github.park4ever.ddibs.holdreservation.repository.HoldReservationRepository;
 import io.github.park4ever.ddibs.launch.domain.Launch;
 import io.github.park4ever.ddibs.launch.repository.LaunchRepository;
 import io.github.park4ever.ddibs.launchvariant.domain.LaunchVariant;
@@ -12,6 +13,7 @@ import io.github.park4ever.ddibs.order.dto.CreateOrderResponse;
 import io.github.park4ever.ddibs.order.repository.OrderRepository;
 import io.github.park4ever.ddibs.order.service.OrderService;
 import io.github.park4ever.ddibs.payment.dto.RequestPaymentRequest;
+import io.github.park4ever.ddibs.payment.repository.PaymentRepository;
 import io.github.park4ever.ddibs.payment.service.PaymentService;
 import io.github.park4ever.ddibs.product.domain.Product;
 import io.github.park4ever.ddibs.product.repository.ProductRepository;
@@ -26,13 +28,14 @@ import io.github.park4ever.ddibs.settlement.dto.admin.AdminSettlementSummaryResp
 import io.github.park4ever.ddibs.settlement.repository.SettlementRepository;
 import io.github.park4ever.ddibs.support.MySqlContainerIntegrationTestSupport;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,7 +43,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
-@Transactional
 class AdminSettlementQueryServiceIntegrationTest extends MySqlContainerIntegrationTestSupport {
 
     @Autowired
@@ -78,6 +80,12 @@ class AdminSettlementQueryServiceIntegrationTest extends MySqlContainerIntegrati
 
     @Autowired
     private SettlementRepository settlementRepository;
+
+    @Autowired
+    HoldReservationRepository holdReservationRepository;
+
+    @Autowired
+    PaymentRepository paymentRepository;
 
     @Test
     @DisplayName("관리자는 정산 상태와 판매자 기준으로 정산 목록을 조회할 수 있다.")
@@ -264,7 +272,7 @@ class AdminSettlementQueryServiceIntegrationTest extends MySqlContainerIntegrati
 
         if (settlementStatus == SettlementStatus.CONFIRMED && settlement.isCreated()) {
             settlement.confirm(LocalDateTime.now());
-            settlementRepository.flush();
+            settlement = settlementRepository.saveAndFlush(settlement);
         }
 
         return new SettlementFixture(member, confirmedOrder, settlement);
@@ -350,6 +358,20 @@ class AdminSettlementQueryServiceIntegrationTest extends MySqlContainerIntegrati
         );
 
         return launchVariantRepository.saveAndFlush(launchVariant);
+    }
+
+    @AfterEach
+    void tearDown() {
+        settlementRepository.deleteAllInBatch();
+        paymentRepository.deleteAllInBatch();
+        holdReservationRepository.deleteAllInBatch();
+        orderRepository.deleteAllInBatch();
+        launchVariantRepository.deleteAllInBatch();
+        launchRepository.deleteAllInBatch();
+        productVariantRepository.deleteAllInBatch();
+        productRepository.deleteAllInBatch();
+        sellerRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     private String uniqueSuffix() {

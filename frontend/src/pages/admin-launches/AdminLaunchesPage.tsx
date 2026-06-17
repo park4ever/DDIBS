@@ -41,27 +41,44 @@ export default function AdminLaunchesPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        void fetchLaunches();
-    }, [searchCondition, page]);
+        let cancelled = false;
 
-    async function fetchLaunches() {
-        setIsLoading(true);
-        setErrorMessage("");
+        async function loadLaunches() {
+            setIsLoading(true);
+            setErrorMessage("");
 
-        try {
-            const response = await getAdminLaunches(searchCondition, page, PAGE_SIZE);
-            setLaunches(response.content);
-            setTotalPages(response.totalPages);
-        } catch (error) {
-            if (error instanceof ApiError) {
-                setErrorMessage(error.message);
-            } else {
-                setErrorMessage("발매 목록을 불러오는 중 오류가 발생했습니다.");
+            try {
+                const response = await getAdminLaunches(searchCondition, page, PAGE_SIZE);
+
+                if (cancelled) {
+                    return;
+                }
+
+                setLaunches(response.content);
+                setTotalPages(response.totalPages);
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                if (error instanceof ApiError) {
+                    setErrorMessage(error.message);
+                } else {
+                    setErrorMessage("발매 목록을 불러오는 중 오류가 발생했습니다.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
-        } finally {
-            setIsLoading(false);
         }
-    }
+
+        void loadLaunches();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [searchCondition, page]);
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();

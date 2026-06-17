@@ -39,27 +39,44 @@ export default function AdminOrdersPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        void fetchOrders();
-    }, [searchCondition, page]);
+        let cancelled = false;
 
-    async function fetchOrders() {
-        setIsLoading(true);
-        setErrorMessage("");
+        async function loadOrders() {
+            setIsLoading(true);
+            setErrorMessage("");
 
-        try {
-            const response = await getAdminOrders(searchCondition, page, PAGE_SIZE);
-            setOrders(response.content);
-            setTotalPages(response.totalPages);
-        } catch (error) {
-            if (error instanceof ApiError) {
-                setErrorMessage(error.message);
-            } else {
-                setErrorMessage("주문 목록을 불러오는 중 오류가 발생했습니다.");
+            try {
+                const response = await getAdminOrders(searchCondition, page, PAGE_SIZE);
+
+                if (cancelled) {
+                    return;
+                }
+
+                setOrders(response.content);
+                setTotalPages(response.totalPages);
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                if (error instanceof ApiError) {
+                    setErrorMessage(error.message);
+                } else {
+                    setErrorMessage("주문 목록을 불러오는 중 오류가 발생했습니다.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
-        } finally {
-            setIsLoading(false);
         }
-    }
+
+        void loadOrders();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [searchCondition, page]);
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();

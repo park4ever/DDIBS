@@ -17,32 +17,51 @@ export default function AdminLaunchDetailPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        void fetchLaunchDetail();
-    }, [launchId]);
+        let cancelled = false;
 
-    async function fetchLaunchDetail() {
-        if (!launchId) {
-            setErrorMessage("발매 ID가 올바르지 않습니다.");
-            setIsLoading(false);
-            return;
-        }
-
-        setIsLoading(true);
-        setErrorMessage("");
-
-        try {
-            const response = await getAdminLaunchDetail(Number(launchId));
-            setLaunchDetail(response);
-        } catch (error) {
-            if (error instanceof ApiError) {
-                setErrorMessage(error.message);
-            } else {
-                setErrorMessage("발매 상세를 불러오는 중 오류가 발생했습니다.");
+        async function loadLaunchDetail() {
+            if (!launchId) {
+                if (!cancelled) {
+                    setErrorMessage("발매 ID가 올바르지 않습니다.");
+                    setIsLoading(false);
+                }
+                return;
             }
-        } finally {
-            setIsLoading(false);
+
+            setIsLoading(true);
+            setErrorMessage("");
+
+            try {
+                const response = await getAdminLaunchDetail(Number(launchId));
+
+                if (cancelled) {
+                    return;
+                }
+
+                setLaunchDetail(response);
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                if (error instanceof ApiError) {
+                    setErrorMessage(error.message);
+                } else {
+                    setErrorMessage("발매 상세를 불러오는 중 오류가 발생했습니다.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
         }
-    }
+
+        void loadLaunchDetail();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [launchId]);
 
     if (isLoading) {
         return <LoadingBox message="발매 상세를 불러오는 중입니다..." />;

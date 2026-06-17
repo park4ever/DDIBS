@@ -17,32 +17,52 @@ export default function AdminSettlementDetailPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        void fetchSettlementDetail();
+        let cancelled = false;
+
+        async function loadSettlementDetail() {
+            if (!settlementId) {
+                if (!cancelled) {
+                    setErrorMessage("정산 ID가 올바르지 않습니다.");
+                    setIsLoading(false);
+                }
+                return;
+            }
+
+            setIsLoading(true);
+            setErrorMessage("");
+
+            try {
+                const response = await getAdminSettlementDetail(Number(settlementId));
+
+                if (cancelled) {
+                    return;
+                }
+
+                setSettlementDetail(response);
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                if (error instanceof ApiError) {
+                    setErrorMessage(error.message);
+                } else {
+                    setErrorMessage("정산 상세를 불러오는 중 오류가 발생했습니다.");
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        void loadSettlementDetail();
+
+        return () => {
+            cancelled = true;
+        };
     }, [settlementId]);
 
-    async function fetchSettlementDetail() {
-        if (!settlementId) {
-            setErrorMessage("정산 ID가 올바르지 않습니다.");
-            setIsLoading(false);
-            return;
-        }
-
-        setIsLoading(true);
-        setErrorMessage("");
-
-        try {
-            const response = await getAdminSettlementDetail(Number(settlementId));
-            setSettlementDetail(response);
-        } catch (error) {
-            if (error instanceof ApiError) {
-                setErrorMessage(error.message);
-            } else {
-                setErrorMessage("정산 상세를 불러오는 중 오류가 발생했습니다.");
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    }
 
     if (isLoading) {
         return <LoadingBox message="정산 상세를 불러오는 중입니다..." />;

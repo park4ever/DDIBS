@@ -1,13 +1,7 @@
-import {
-    createContext,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-    type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getMe, login, logout } from "../api/auth";
 import type { LoginRequest, MeResponse } from "../types/auth";
+import { AuthContext } from "./useAuth";
 
 interface AuthContextValue {
     user: MeResponse | null;
@@ -18,8 +12,6 @@ interface AuthContextValue {
     refreshMe: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
 interface AuthProviderProps {
     children: ReactNode;
 }
@@ -29,19 +21,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [isInitializing, setIsInitializing] = useState(true);
 
     useEffect(() => {
-        void initializeAuth();
-    }, []);
+        let cancelled = false;
 
-    async function initializeAuth() {
-        try {
-            const me = await getMe();
-            setUser(me);
-        } catch {
-            setUser(null);
-        } finally {
-            setIsInitializing(false);
-        }
-    }
+        getMe()
+            .then((me) => {
+                if (cancelled) {
+                    return;
+                }
+
+                setUser(me);
+            })
+            .catch(() => {
+                if (cancelled) {
+                    return;
+                }
+
+                setUser(null);
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsInitializing(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     async function signIn(request: LoginRequest) {
         const response = await login(request);
@@ -77,14 +83,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-    const context = useContext(AuthContext);
-
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-
-    return context;
 }
