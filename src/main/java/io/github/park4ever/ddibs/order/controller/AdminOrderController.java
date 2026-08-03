@@ -1,5 +1,6 @@
 package io.github.park4ever.ddibs.order.controller;
 
+import io.github.park4ever.ddibs.order.dto.admin.AdminOrderDetailResponse;
 import io.github.park4ever.ddibs.order.dto.admin.AdminOrderSearchRequest;
 import io.github.park4ever.ddibs.order.dto.admin.AdminOrderSummaryResponse;
 import io.github.park4ever.ddibs.order.service.AdminOrderQueryService;
@@ -9,10 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,6 +27,12 @@ public class AdminOrderController {
     ) {
         Page<AdminOrderSummaryResponse> response = adminOrderQueryService.getOrders(request, pageable);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<AdminOrderDetailResponse> getOrderDetail(@PathVariable("orderId") Long orderId) {
+        AdminOrderDetailResponse response = adminOrderQueryService.getOrderDetail(orderId);
         return ResponseEntity.ok(response);
     }
 }
